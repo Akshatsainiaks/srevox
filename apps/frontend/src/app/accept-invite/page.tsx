@@ -95,3 +95,4 @@ export default function AcceptInvitePage() {
     </div>
   );
 }
+export const dynamic = "force-dynamic";
