@@ -1,0 +1,94 @@
+import nodemailer from "nodemailer";
+import type { CrashEvent } from "../types.js";
+
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: "#DC2626",
+  warning:  "#D97706",
+  info:     "#2563EB",
+};
+
+export async function sendEmail(
+  config: Record<string, string>,
+  event: CrashEvent,
+  incidentId: string,
+  severity: string
+): Promise<void> {
+  const transporter = nodemailer.createTransport({
+    host:   config.smtp_host || "smtp.gmail.com",
+    port:   Number(config.smtp_port || 587),
+    secure: config.smtp_port === "465",
+    auth:   { user: config.smtp_user, pass: config.smtp_pass },
+  });
+
+  const color = SEVERITY_COLORS[severity] || SEVERITY_COLORS.warning;
+  const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/incidents/${incidentId}`;
+  const recipients = (config.to || config.smtp_user).split(",").map((e) => e.trim());
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <div style="background:${color};padding:24px 28px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
+        <div>
+          <div style="color:rgba(255,255,255,0.85);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Loopzen Alert</div>
+          <div style="color:white;font-size:18px;font-weight:700;margin-top:2px;">Pod Crash Detected — ${severity.toUpperCase()}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:28px;">
+      <table style="width:100%;border-collapse:collapse;">
+        ${[
+          ["Pod",        event.pod_name],
+          ["Namespace",  event.namespace],
+          ["Container",  event.container_name || "—"],
+          ["Reason",     event.crash_reason],
+          ["Restarts",   event.restart_count],
+          ["Detected",   new Date(event.detected_at).toUTCString()],
+        ].map(([k, v]) => `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 0;color:#64748b;font-size:13px;width:100px;">${k}</td>
+            <td style="padding:10px 0;color:#0f172a;font-size:13px;font-weight:600;">
+              ${k === "Reason"
+                ? `<span style="background:${color}15;color:${color};padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700;">${v}</span>`
+                : v
+              }
+            </td>
+          </tr>`).join("")}
+      </table>
+
+      <div style="margin-top:24px;text-align:center;">
+        <a href="${dashboardUrl}"
+           style="display:inline-block;background:${color};color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;">
+          View Incident & AI Diagnosis →
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#94a3b8;">
+        <strong style="color:#6366f1;">Loopzen</strong> — Stay calm. We'll catch the crash loops.
+        <br>Incident ID: <code style="font-size:11px;">${incidentId}</code>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from:    `"Loopzen Alerts" <${config.from || config.smtp_user}>`,
+    to:      recipients.join(", "),
+    subject: `[Loopzen ${severity.toUpperCase()}] ${event.pod_name} crashed — ${event.crash_reason}`,
+    html,
+  });
+
+  console.log(`[email] Sent to ${recipients.join(", ")}`);
+}

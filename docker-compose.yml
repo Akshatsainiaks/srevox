@@ -1,0 +1,114 @@
+# ═══════════════════════════════════════════════════════════════
+#  Loopzen — Self-Hosted Docker Compose
+#  Usage: docker compose up -d
+#  Config: edit .env (copy from .env.example)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: loopzen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-loopzen}
+      POSTGRES_USER:     ${POSTGRES_USER:-loopzen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loopzen}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loopzen
+
+  # ── Redis ─────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: loopzen-redis
+    restart: unless-stopped
+    command: redis-server --bind 0.0.0.0 --protected-mode no
+    ports:
+      - "6379:6379"   # Exposed so K8s watcher agents can reach it
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loopzen
+
+  # ── API (Fastify) ─────────────────────────────────────────────
+  api:
+    image: ghcr.io/Akshatsainiaks/loopzen-api:latest
+    container_name: loopzen-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-4000}:4000"
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_URL:     redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - loopzen
+
+  # ── Alert Worker ──────────────────────────────────────────────
+  worker:
+    image: ghcr.io/Akshatsainiaks/loopzen-worker:latest
+    container_name: loopzen-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_URL:     redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - loopzen
+
+  # ── AI Service (Python FastAPI) ───────────────────────────────
+  ai:
+    image: ghcr.io/Akshatsainiaks/loopzen-ai:latest
+    container_name: loopzen-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    networks:
+      - loopzen
+
+  # ── Frontend (Next.js) ────────────────────────────────────────
+  frontend:
+    image: ghcr.io/Akshatsainiaks/loopzen-frontend:latest
+    container_name: loopzen-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    depends_on:
+      - api
+    networks:
+      - loopzen
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  loopzen:
+    driver: bridge

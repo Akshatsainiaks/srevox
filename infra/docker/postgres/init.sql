@@ -1,0 +1,125 @@
+-- Loopzen Database Schema
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE organizations (
+  id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name       TEXT NOT NULL,
+  slug       TEXT UNIQUE NOT NULL,
+  plan       TEXT DEFAULT 'free',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE users (
+  id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id          TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  email           TEXT UNIQUE NOT NULL,
+  hashed_password TEXT NOT NULL,
+  full_name       TEXT DEFAULT '',
+  role            TEXT DEFAULT 'member',
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  last_login_at   TIMESTAMPTZ
+);
+
+CREATE TABLE clusters (
+  id                   TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id               TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  name                 TEXT NOT NULL,
+  connection_type      TEXT NOT NULL,
+  kubeconfig_encrypted TEXT,
+  agent_token          TEXT UNIQUE,
+  api_server_url       TEXT,
+  cloud_provider       TEXT DEFAULT 'other',
+  k8s_version          TEXT,
+  status               TEXT DEFAULT 'pending',
+  last_seen_at         TIMESTAMPTZ,
+  error_message        TEXT,
+  created_at           TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE channels (
+  id               TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id           TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  name             TEXT NOT NULL,
+  type             TEXT NOT NULL,
+  config_encrypted TEXT NOT NULL,
+  enabled          BOOLEAN DEFAULT true,
+  last_success_at  TIMESTAMPTZ,
+  last_error       TEXT,
+  created_at       TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE alert_rules (
+  id               TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id           TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  cluster_id       TEXT REFERENCES clusters(id) ON DELETE CASCADE,
+  name             TEXT NOT NULL,
+  description      TEXT DEFAULT '',
+  namespaces       JSONB DEFAULT '[]',
+  pod_labels       JSONB DEFAULT '{}',
+  crash_reasons    JSONB DEFAULT '["CrashLoopBackOff","OOMKilled","Error","BackOff","ImagePullBackOff"]',
+  min_restarts     INT DEFAULT 3,
+  cooldown_minutes INT DEFAULT 15,
+  severity         TEXT DEFAULT 'warning',
+  channel_ids      JSONB DEFAULT '[]',
+  enabled          BOOLEAN DEFAULT true,
+  created_at       TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE incidents (
+  id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id          TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  cluster_id      TEXT REFERENCES clusters(id),
+  rule_id         TEXT REFERENCES alert_rules(id),
+  pod_name        TEXT NOT NULL,
+  namespace       TEXT NOT NULL,
+  container_name  TEXT,
+  crash_reason    TEXT NOT NULL,
+  restart_count   INT DEFAULT 0,
+  exit_code       INT,
+  pod_labels      JSONB DEFAULT '{}',
+  raw_event       JSONB DEFAULT '{}',
+  severity        TEXT DEFAULT 'warning',
+  status          TEXT DEFAULT 'open',
+  acknowledged_by TEXT,
+  resolved_by     TEXT,
+  ai_diagnosis    JSONB,
+  ai_diagnosed_at TIMESTAMPTZ,
+  first_seen_at   TIMESTAMPTZ DEFAULT now(),
+  last_seen_at    TIMESTAMPTZ DEFAULT now(),
+  resolved_at     TIMESTAMPTZ
+);
+
+CREATE TABLE alerts_sent (
+  id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  incident_id   TEXT REFERENCES incidents(id) ON DELETE CASCADE,
+  channel_id    TEXT REFERENCES channels(id),
+  channel_type  TEXT NOT NULL,
+  status        TEXT NOT NULL,
+  error_message TEXT,
+  sent_at       TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE activity_log (
+  id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id      TEXT,
+  user_id     TEXT,
+  action      TEXT NOT NULL,
+  resource    TEXT,
+  resource_id TEXT,
+  metadata    JSONB DEFAULT '{}',
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX idx_incidents_org_status ON incidents(org_id, status);
+CREATE INDEX idx_incidents_cluster    ON incidents(cluster_id);
+CREATE INDEX idx_incidents_first_seen ON incidents(first_seen_at DESC);
+CREATE INDEX idx_clusters_org         ON clusters(org_id);
+CREATE INDEX idx_rules_cluster        ON alert_rules(cluster_id);
+CREATE INDEX idx_channels_org         ON channels(org_id);
+CREATE INDEX idx_alerts_sent_incident ON alerts_sent(incident_id);
+CREATE INDEX idx_activity_org         ON activity_log(org_id, created_at DESC);
+
+-- Seed default org
+INSERT INTO organizations (id, name, slug, plan)
+VALUES ('00000000-0000-0000-0000-000000000001', 'My Organization', 'my-org', 'pro');
