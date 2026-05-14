@@ -1,12 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense } from "react";
+import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Radio, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { setToken, setUser } from "@/lib/auth";
 
-export default function AcceptInvitePage() {
+export const dynamic = "force-dynamic";
+
+function AcceptInviteForm() {
   const params  = useSearchParams();
   const router  = useRouter();
   const token   = params.get("token") || "";
@@ -95,4 +98,11 @@ export default function AcceptInvitePage() {
     </div>
   );
 }
-export const dynamic = "force-dynamic";
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <AcceptInviteForm />
+    </Suspense>
+  );
+}
