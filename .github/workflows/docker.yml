@@ -1,0 +1,58 @@
+name: Build & Push Docker Images
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push API
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/api
+          push: true
+          tags: ghcr.io/akshatsainiaks/loopzen-api:latest
+
+      - name: Build & Push Worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/alert-worker
+          push: true
+          tags: ghcr.io/akshatsainiaks/loopzen-worker:latest
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/frontend
+          push: true
+          tags: ghcr.io/akshatsainiaks/loopzen-frontend:latest
+
+      - name: Build & Push AI Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/backend
+          push: true
+          tags: ghcr.io/akshatsainiaks/loopzen-ai:latest
+
+      - name: Build & Push Agent
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/watcher
+          push: true
+          tags: ghcr.io/akshatsainiaks/loopzen-agent:latest
