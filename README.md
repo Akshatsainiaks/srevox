@@ -64,30 +64,32 @@ Test manually:
 redis-cli PUBLISH loopzen:crashes '{"cluster_id":"YOUR_CLUSTER_ID","pod_name":"test-pod","namespace":"production","container_name":"app","crash_reason":"OOMKilled","restart_count":5,"pod_labels":{},"raw_event":{},"detected_at":"2026-03-22T10:00:00Z"}'
 ``` -->
 
-
 <div align="center">
 
 <br/>
 
-<img src="https://img.shields.io/badge/-%E2%9A%A1%20LOOPZEN-6366f1?style=for-the-badge&logoColor=white&labelColor=0d0f17" height="48"/>
+<img src="https://img.shields.io/badge/-%E2%9A%A1%20LOOPZEN-6366f1?style=for-the-badge&logoColor=white&labelColor=0d0f17" height="52"/>
 
-### **Kubernetes Pod Crash Alerting — Self-Hosted**
-*Loop = CrashLoopBackOff. Zen = staying calm.*
+<h3>Kubernetes Pod Crash Alerting — Self-Hosted</h3>
+<p><i>Loop = CrashLoopBackOff &nbsp;·&nbsp; Zen = staying calm.</i></p>
 
 <br/>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-6366f1.svg?style=flat-square)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-ready-0ea5e9?style=flat-square&logo=docker)](https://hub.docker.com/r/loopzen)
-[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://golang.org)
+[![Docker Pulls](https://img.shields.io/docker/pulls/akshatsaini08/loopzen-api?style=flat-square&logo=docker&label=Docker%20Pulls&color=0ea5e9)](https://hub.docker.com/u/akshatsaini08)
+[![GitHub Release](https://img.shields.io/github/v/release/Akshatsainiaks/loopzen?style=flat-square&color=6366f1)](https://github.com/Akshatsainiaks/loopzen/releases)
+[![License](https://img.shields.io/badge/License-Source%20Available-6366f1.svg?style=flat-square)](#license)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go)](https://golang.org)
 [![Node](https://img.shields.io/badge/Node-18+-339933?style=flat-square&logo=node.js)](https://nodejs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)](https://postgresql.org)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis)](https://redis.io)
 
 <br/>
 
 ```
-Pod crashes → Go watcher detects → Redis pub/sub → Alert worker → Your team gets notified
+Pod crashes → Go watcher → Redis → Alert worker → Your team notified in seconds
 ```
+
+<br/>
+
+> 🐳 **No clone needed. Just Docker + your `.env` file.**
 
 <br/>
 
@@ -95,227 +97,182 @@ Pod crashes → Go watcher detects → Redis pub/sub → Alert worker → Your t
 
 ---
 
-## 📖 What is Loopzen?
+## What is Loopzen?
 
-Loopzen is a **100% self-hosted**, open-source Kubernetes pod crash alerting platform built for teams that run their own infrastructure — on-prem, VMware, bare metal, private cloud, or air-gapped environments.
+Loopzen watches your Kubernetes clusters 24/7 using the **K8s Watch API** — a single persistent connection, no polling — and instantly notifies your team the moment a pod crashes.
 
-It watches your K8s clusters 24/7 using the **Kubernetes Watch API** (a single persistent connection — no polling), and instantly notifies your team via **Email, Teams, Slack, WhatsApp, or Webhooks** the moment a pod crashes.
-
-> ✅ No cloud dependency. No SaaS. No data leaves your network. Ever.
+Built for teams running **on-premises, VMware, bare metal, private cloud, or air-gapped** infrastructure. No data leaves your network.
 
 ---
 
 ## ✨ Features
 
-| Feature | Description |
+| | Feature | Description |
+|---|---|---|
+| ⚡ | **Instant detection** | Sub-5s crash detection via K8s Watch API |
+| 🔔 | **Multi-channel alerts** | Email, Microsoft Teams, Slack, WhatsApp, Webhook |
+| 🤖 | **AI diagnosis** | Root cause + fix steps via OpenAI, Anthropic, or local Ollama |
+| 🛡️ | **Noise control** | Cooldowns, restart thresholds, namespace filters |
+| 👤 | **Service owners** | Route alerts to the team that owns the crashing service |
+| ☁️ | **Any cluster** | EKS, GKE, AKS, on-prem, minikube, k3s, RKE |
+| 🔒 | **Self-hosted** | Runs entirely in your own infrastructure |
+| 🐳 | **Docker-native** | One `docker-compose.yml` — no build required |
+
+---
+
+## 🚀 Quick Start
+
+**Requirements:** Docker & Docker Compose — nothing else.
+
+### 1. Download config files
+
+```bash
+mkdir loopzen && cd loopzen
+
+curl -o docker-compose.yml \
+  https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/docker-compose.yml
+
+curl -o .env \
+  https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/.env.example
+```
+
+### 2. Configure your `.env`
+
+```bash
+nano .env
+```
+
+Minimum required:
+
+```env
+POSTGRES_PASSWORD=your_secure_password
+BACKEND_SECRET_KEY=any_random_string_min_32_chars___
+ENCRYPTION_KEY=exactly_32_chars_here____________
+NEXT_PUBLIC_API_URL=http://YOUR_SERVER_IP:4000
+FRONTEND_URL=http://YOUR_SERVER_IP:3000
+```
+
+### 3. Start
+
+```bash
+docker compose up -d
+```
+
+Docker pulls all images automatically. No Node, Go, or Python needed.
+
+| Service | URL |
 |---|---|
-| ⚡ **Instant detection** | Sub-5s via K8s Watch API — not polling |
-| 🔔 **Multi-channel alerts** | Email, Microsoft Teams, Slack, WhatsApp, Webhook |
-| 🤖 **AI diagnosis** | Root cause + fix steps (OpenAI, Anthropic, or local Ollama) |
-| 🛡️ **Noise control** | Cooldowns, restart thresholds, namespace filters |
-| 👤 **Service owners** | Route alerts to the team that owns the crashing service |
-| ☁️ **Any cluster** | EKS, GKE, AKS, on-prem, minikube, k3s, RKE |
-| 🔒 **Self-hostable** | Runs entirely in your own infra — no external calls |
-| 🐳 **Docker images** | One `docker-compose.yml` — no code required |
+| Dashboard | `http://YOUR_SERVER_IP:3000` |
+| API | `http://YOUR_SERVER_IP:4000` |
+
+**Default login:** `admin@loopzen.local` / `admin123`
+> ⚠️ Change the default password immediately after first login.
+
+### 4. Connect your cluster
+
+```bash
+kubectl apply -f \
+  https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/loopzen-agent.yml
+```
+
+Then set your cluster details:
+
+```bash
+kubectl set env deployment/loopzen-agent -n kube-system \
+  REDIS_URL=redis://YOUR_LOOPZEN_IP:6379 \
+  CLUSTER_ID=YOUR_UUID_FROM_DASHBOARD \
+  CLUSTER_NAME=production
+```
+
+Get your `CLUSTER_ID` from: **Dashboard → Clusters → Add Cluster**
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     YOUR INTERNAL NETWORK                        │
-│                                                                   │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐   │
-│  │  Kubernetes  │    │  Go Watcher  │    │     Redis 7      │   │
-│  │   Cluster    │───▶│  (per cluster│───▶│   (pub/sub bus)  │   │
-│  │              │    │   agent)     │    │                  │   │
-│  └──────────────┘    └──────────────┘    └────────┬─────────┘   │
-│                                                    │             │
-│  ┌──────────────┐    ┌──────────────┐    ┌────────▼─────────┐   │
-│  │  Next.js     │    │  Fastify API │    │  Alert Worker    │   │
-│  │  Dashboard   │◀───│  (Node 18)   │◀───│  (Node 18)       │   │
-│  │  :3000       │    │  :4000       │    │                  │   │
-│  └──────────────┘    └──────┬───────┘    └──────────────────┘   │
-│                             │                                     │
-│                    ┌────────▼─────────┐                          │
-│                    │   PostgreSQL 16   │                          │
-│                    │   (incidents,     │                          │
-│                    │    rules, users)  │                          │
-│                    └──────────────────┘                          │
-│                                                                   │
-│  ┌──────────────────────────────────────────────┐                │
-│  │  AI Service (optional)                        │                │
-│  │  OpenAI / Anthropic / Ollama (local/offline) │                │
-│  └──────────────────────────────────────────────┘                │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                   YOUR INTERNAL NETWORK                      │
+│                                                             │
+│  ┌─────────────┐   ┌──────────────┐   ┌────────────────┐   │
+│  │  Kubernetes │   │  Go Watcher  │   │    Redis 7     │   │
+│  │  Cluster    │──▶│  (agent)     │──▶│  (pub/sub)     │   │
+│  └─────────────┘   └──────────────┘   └───────┬────────┘   │
+│                                               │             │
+│  ┌─────────────┐   ┌──────────────┐   ┌───────▼────────┐   │
+│  │  Dashboard  │   │  API :4000   │   │  Alert Worker  │   │
+│  │  :3000      │◀──│  (Fastify)   │◀──│  (Node.js)     │   │
+│  └─────────────┘   └──────┬───────┘   └────────────────┘   │
+│                           │                                 │
+│                   ┌───────▼──────────┐                      │
+│                   │   PostgreSQL 16  │                      │
+│                   │   AI Service     │                      │
+│                   └──────────────────┘                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**How a crash flows:**
+**Crash flow:**
 1. Go watcher opens a Watch stream on the K8s Pods API
-2. Pod enters `OOMKilled` / `CrashLoopBackOff` / `Error` state
-3. Watcher publishes JSON to Redis channel `loopzen:crashes`
-4. Alert worker picks it up, matches your rules, applies noise filters
-5. Sends alert to your configured channels (Teams, Email, Slack, etc.)
-6. Incident saved to PostgreSQL — view, acknowledge, resolve, get AI diagnosis
+2. Pod enters `OOMKilled` / `CrashLoopBackOff` / `Error`
+3. Watcher publishes JSON → Redis `loopzen:crashes`
+4. Alert worker matches rules, applies filters, sends alerts
+5. Incident saved to PostgreSQL — view, acknowledge, AI diagnose
 
 ---
 
-## 🚀 Quick Start — Docker Compose (No Code Required)
+## 🐳 Docker Images
 
-### Prerequisites
+All images on Docker Hub — pulled automatically by `docker compose up`:
 
-- Docker + Docker Compose
-- A Kubernetes cluster (any — EKS, GKE, on-prem, minikube)
-- `kubectl` access to the cluster
-
-### 1. Clone & configure
-
-```bash
-git clone https://github.com/Akshatsainiaks/loopzen.git
-cd loopzen
-cp .env.example .env
-```
-
-Edit `.env` — **this is the only file you need to touch:**
-
-```env
-# Required
-POSTGRES_PASSWORD=your_secure_password
-BACKEND_SECRET_KEY=your_32_char_secret_key_here____
-ENCRYPTION_KEY=your_32_chars_exactly_here______
-
-# Optional — for AI diagnosis
-OPENAI_API_KEY=sk-...          # OR
-ANTHROPIC_API_KEY=sk-ant-...   # OR leave blank to use Ollama (local)
-
-# Optional — for email alerts
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=you@gmail.com
-SMTP_PASS=your_app_password
-```
-
-### 2. Start everything
-
-```bash
-docker compose up -d
-```
-
-That's it. Services started:
-
-| Service | URL |
+| Image | Tag |
 |---|---|
-| Dashboard | http://localhost:3000 |
-| API | http://localhost:4000 |
-| AI Service | http://localhost:8000 |
+| `akshatsaini08/loopzen-api` | `latest` / `v1.0.0` |
+| `akshatsaini08/loopzen-frontend` | `latest` / `v1.0.0` |
+| `akshatsaini08/loopzen-worker` | `latest` / `v1.0.0` |
+| `akshatsaini08/loopzen-ai` | `latest` / `v1.0.0` |
+| `akshatsaini08/loopzen-agent` | `latest` / `v1.0.0` |
 
-Default login: `admin@loopzen.local` / `admin123`
+Use pinned versions in production:
 
-> ⚠️ Change the default password immediately after first login.
-
-### 3. Connect your cluster
-
-```bash
-# Install the watcher agent into your cluster
-kubectl apply -f - <<EOF
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: loopzen-agent
-  namespace: kube-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels: { app: loopzen-agent }
-  template:
-    metadata:
-      labels: { app: loopzen-agent }
-    spec:
-      serviceAccountName: loopzen-agent
-      containers:
-      - name: agent
-        image: ghcr.io/Akshatsainiaks/loopzen-agent:latest
-        env:
-        - name: REDIS_URL
-          value: "redis://YOUR_LOOPZEN_HOST:6379"
-        - name: CLUSTER_ID
-          value: "YOUR_CLUSTER_UUID_FROM_DASHBOARD"
-        - name: CLUSTER_NAME
-          value: "production"
-        resources:
-          requests: { cpu: 5m, memory: 16Mi }
-          limits:   { cpu: 50m, memory: 64Mi }
-EOF
+```yaml
+image: akshatsaini08/loopzen-api:v1.0.0   # recommended for production
+image: akshatsaini08/loopzen-api:latest    # always latest
 ```
-
-Get your `CLUSTER_UUID` from: Dashboard → Clusters → Add Cluster → copy the UUID shown.
 
 ---
 
 ## 🏢 On-Premises / Internal Network Setup
 
-This is the primary use case Loopzen is designed for.
-
 ### Network requirements
 
 ```
-Your K8s nodes  ──(outbound TCP 6379)──▶  Loopzen Redis
-Your browser    ──(TCP 3000/4000)────────▶  Loopzen host
-Loopzen host    ──(TCP 443, optional)────▶  OpenAI/Anthropic (AI only)
-                                            (skip if using Ollama)
+K8s nodes     ──(outbound TCP 6379)──▶  Loopzen Redis host
+Your browser  ──(TCP 3000 / 4000)────▶  Loopzen host
+Loopzen host  ──(TCP 443, optional)──▶  OpenAI / Anthropic
+                                        (skip — use Ollama for air-gapped)
 ```
 
-**No inbound ports needed on K8s nodes.** The agent connects outbound only.
+No inbound ports needed on K8s nodes. The agent connects **outbound only**.
 
-### Typical on-prem deployment
-
-```
-┌─────────────────┐         ┌──────────────────────────┐
-│  K8s Cluster    │         │   Loopzen Server          │
-│  (any network)  │         │   (VM / bare metal)       │
-│                 │         │                           │
-│  loopzen-agent  │──6379──▶│  Redis                   │
-│  (Deployment)   │         │  PostgreSQL               │
-│                 │         │  API + Dashboard          │
-└─────────────────┘         │  Alert Worker             │
-                            └──────────────────────────┘
-                                         │
-                            ┌────────────▼────────────┐
-                            │  Alert destinations      │
-                            │  (internal SMTP relay,   │
-                            │   Teams webhook,         │
-                            │   Slack webhook, etc.)   │
-                            └─────────────────────────┘
-```
-
-### VMware / static IP setup
+### Redis — open to internal network
 
 ```bash
-# On your Loopzen VM — open Redis to internal network
-# Edit /etc/redis/redis.conf
+# /etc/redis/redis.conf
 bind 0.0.0.0
 protected-mode no
 
 sudo systemctl restart redis
-
-# Verify from another machine on the network
-redis-cli -h YOUR_VM_IP -p 6379 ping
-# PONG
+redis-cli ping   # PONG
 ```
 
-### Air-gapped / no internet setup
-
-Use **Ollama** for local AI (no OpenAI/Anthropic needed):
+### Air-gapped / no internet
 
 ```env
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-# No OPENAI_API_KEY or ANTHROPIC_API_KEY needed
 ```
 
 ```bash
-# On the Loopzen host
 docker run -d --name ollama -p 11434:11434 ollama/ollama
 docker exec ollama ollama pull llama3
 ```
@@ -324,69 +281,43 @@ Email alerts work with any internal SMTP relay — no internet required.
 
 ---
 
-## 🐳 Docker Images
+## ⚙️ Environment Variables
 
-All images are available on GitHub Container Registry. **No code required — just pull and configure via environment variables.**
+### Required
 
-| Image | Description |
+| Variable | Description |
 |---|---|
-| `ghcr.io/Akshatsainiaks/loopzen-api:latest` | Fastify REST API |
-| `ghcr.io/Akshatsainiaks/loopzen-frontend:latest` | Next.js dashboard |
-| `ghcr.io/Akshatsainiaks/loopzen-worker:latest` | Alert worker |
-| `ghcr.io/Akshatsainiaks/loopzen-ai:latest` | AI diagnosis service |
-| `ghcr.io/Akshatsainiaks/loopzen-agent:latest` | Go K8s watcher agent |
+| `POSTGRES_PASSWORD` | Database password |
+| `BACKEND_SECRET_KEY` | JWT signing key — min 32 characters |
+| `ENCRYPTION_KEY` | Channel config encryption — **exactly** 32 characters |
+| `NEXT_PUBLIC_API_URL` | API URL as seen from the browser |
+| `FRONTEND_URL` | Dashboard URL — used for CORS |
 
-Pull all at once:
-
-```bash
-docker compose pull
-```
-
----
-
-## ⚙️ Full Environment Variable Reference
-
-### Core (required)
-
-| Variable | Description | Example |
-|---|---|---|
-| `POSTGRES_HOST` | PostgreSQL host | `192.168.1.50` |
-| `POSTGRES_PORT` | PostgreSQL port | `5432` |
-| `POSTGRES_DB` | Database name | `loopzen` |
-| `POSTGRES_USER` | DB username | `loopzen` |
-| `POSTGRES_PASSWORD` | DB password | `your_secure_pass` |
-| `REDIS_URL` | Redis connection URL | `redis://192.168.1.50:6379` |
-| `BACKEND_SECRET_KEY` | JWT signing key (min 32 chars) | `change_me_in_production_xxxxx` |
-| `ENCRYPTION_KEY` | Channel config encryption (32 chars exactly) | `change_me_32_chars_exactly____` |
-| `FRONTEND_URL` | Dashboard URL (for CORS) | `http://192.168.1.50:3000` |
-| `NEXT_PUBLIC_API_URL` | API URL seen by browser | `http://192.168.1.50:4000` |
-
-### AI (optional)
+### Optional — AI Diagnosis
 
 | Variable | Description |
 |---|---|
 | `AI_PROVIDER` | `openai` / `anthropic` / `ollama` |
-| `OPENAI_API_KEY` | OpenAI key (if using OpenAI) |
-| `ANTHROPIC_API_KEY` | Anthropic key (if using Anthropic) |
-| `OLLAMA_BASE_URL` | Ollama URL (if self-hosted AI) |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `OLLAMA_BASE_URL` | Ollama URL for local/offline AI |
 
-### Email alerts (optional)
+### Optional — Email Alerts
 
 | Variable | Description |
 |---|---|
-| `SMTP_HOST` | SMTP server host |
-| `SMTP_PORT` | SMTP port (587 for TLS) |
+| `SMTP_HOST` | SMTP server (e.g. `smtp.gmail.com`) |
+| `SMTP_PORT` | SMTP port (`587` for TLS) |
 | `SMTP_USER` | SMTP username |
-| `SMTP_PASS` | SMTP password / app password |
+| `SMTP_PASS` | SMTP password or app password |
 
-### Watcher agent (per cluster)
+### Watcher Agent (set per cluster)
 
 | Variable | Description |
 |---|---|
-| `REDIS_URL` | Loopzen Redis URL from agent's perspective |
-| `CLUSTER_ID` | UUID from dashboard (Clusters → Add) |
-| `CLUSTER_NAME` | Human-readable name |
-| `KUBECONFIG` | Path to kubeconfig (optional — uses in-cluster if unset) |
+| `REDIS_URL` | Loopzen Redis URL from inside the cluster |
+| `CLUSTER_ID` | UUID from Dashboard → Clusters → Add |
+| `CLUSTER_NAME` | Friendly name for this cluster |
 | `WATCH_NAMESPACES` | Comma-separated namespaces (empty = all) |
 
 ---
@@ -395,33 +326,33 @@ docker compose pull
 
 ### Email / Gmail
 ```
-smtp_host   → smtp.gmail.com
-smtp_port   → 587
-smtp_user   → you@gmail.com
-smtp_pass   → 16-char App Password (myaccount.google.com → Security → App passwords)
-to          → alert@yourcompany.com, oncall@yourcompany.com
+smtp_host  →  smtp.gmail.com
+smtp_port  →  587
+smtp_user  →  you@gmail.com
+smtp_pass  →  App Password (Google Account → Security → App passwords)
+to         →  oncall@yourcompany.com
 ```
 
 ### Microsoft Teams
 ```
-webhook_url → https://Akshatsainiaks.webhook.office.com/webhookb2/...
+webhook_url  →  https://your-org.webhook.office.com/webhookb2/...
 ```
 
 ### Slack
 ```
-webhook_url → https://hooks.slack.com/services/...
+webhook_url  →  https://hooks.slack.com/services/...
 ```
 
 ### WhatsApp (via Twilio)
 ```
-account_sid → ACxxxxx
-auth_token  → your_token
-from        → whatsapp:+14155238886
-to          → whatsapp:+1234567890
+account_sid  →  ACxxxxxxxx
+auth_token   →  your_token
+from         →  whatsapp:+14155238886
+to           →  whatsapp:+91XXXXXXXXXX
 ```
 
 ### Generic Webhook
-Any HTTP endpoint — Loopzen POSTs JSON:
+Loopzen POSTs this JSON to any HTTP endpoint:
 ```json
 {
   "pod_name": "payment-svc-abc",
@@ -438,128 +369,88 @@ Any HTTP endpoint — Loopzen POSTs JSON:
 
 ## 🧪 Testing Your Setup
 
-### 1. Verify watcher is subscribed
+### Verify alert worker is connected
 ```bash
-redis-cli -h YOUR_REDIS_HOST -p 6379 PUBSUB NUMSUB loopzen:crashes
-# Should return: (integer) 1  ← means alert worker is connected
+redis-cli -h YOUR_REDIS_IP -p 6379 PUBSUB NUMSUB loopzen:crashes
+# (integer) 1  ← worker connected
+# (integer) 0  ← worker not connected, check REDIS_URL
 ```
 
-### 2. Publish a test crash event
+### Send a test crash event
 ```bash
-redis-cli -h YOUR_REDIS_HOST -p 6379 PUBLISH loopzen:crashes '{
-  "cluster_id": "YOUR_CLUSTER_UUID",
-  "pod_name": "test-pod",
-  "namespace": "default",
+redis-cli -h YOUR_REDIS_IP -p 6379 PUBLISH loopzen:crashes '{
+  "cluster_id":     "YOUR_CLUSTER_UUID",
+  "pod_name":       "test-pod",
+  "namespace":      "default",
   "container_name": "app",
-  "crash_reason": "OOMKilled",
-  "restart_count": 5,
-  "exit_code": 137,
-  "pod_labels": {},
-  "raw_event": {},
-  "detected_at": "2026-05-14T14:00:00Z"
+  "crash_reason":   "OOMKilled",
+  "restart_count":  5,
+  "exit_code":      137,
+  "pod_labels":     {},
+  "raw_event":      {},
+  "detected_at":    "2026-05-14T14:00:00Z"
 }'
 ```
 
-You should receive an alert within seconds.
-
-### 3. Simulate a real pod crash
+### Simulate a real pod crash
 ```bash
 # CrashLoopBackOff
-kubectl run crash-test \
-  --image=busybox --restart=Always \
-  -- /bin/sh -c "exit 1"
+kubectl run crash-test --image=busybox --restart=Always -- /bin/sh -c "exit 1"
 
 # OOMKilled
-kubectl run oom-test \
-  --image=polinux/stress \
-  --restart=Always \
-  --limits='memory=64Mi' \
-  -- stress --vm 1 --vm-bytes 128M
+kubectl run oom-test --image=polinux/stress --restart=Always \
+  --limits='memory=64Mi' -- stress --vm 1 --vm-bytes 128M
 
-# Watch it crash
+# Watch
 kubectl get pod crash-test -w
 
-# Clean up
+# Cleanup
 kubectl delete pod crash-test oom-test
 ```
 
-### Common issues
+### Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `PUBSUB NUMSUB` returns `0` | Alert worker not connected to Redis | Run worker from `alert-worker/` dir; check `REDIS_URL` |
-| `PUBLISH` returns `(integer) 0` | No subscribers | See above |
-| `All channels filtered` | Alert rule has no channels | Dashboard → Alert Rules → attach a channel |
-| Agent can't reach Redis | Firewall / Redis bind | Open port 6379; set `bind 0.0.0.0` in redis.conf |
-| No incidents in dashboard | Rule cluster_id mismatch | Check `CLUSTER_ID` env matches dashboard UUID exactly |
+| `PUBSUB NUMSUB` → `0` | Worker not connected to Redis | Check `REDIS_URL` in `.env` |
+| `PUBLISH` returns `0` | No subscribers | Start alert worker |
+| `All channels filtered` | Rule has no channels attached | Dashboard → Alert Rules → add channel |
+| Agent can't reach Redis | Firewall or Redis bind | Open port 6379; set `bind 0.0.0.0` |
+| No incidents in dashboard | `CLUSTER_ID` mismatch | Must match UUID exactly from dashboard |
 
 ---
 
-## 📋 Alert Rule Configuration
+## 💰 Pricing
 
-| Field | Description |
-|---|---|
-| **Cluster** | Which cluster to watch |
-| **Namespaces** | Leave empty to watch all namespaces |
-| **Crash reasons** | `OOMKilled`, `CrashLoopBackOff`, `Error`, etc. (empty = all) |
-| **Min restarts** | Only alert after N restarts (noise filter) |
-| **Cooldown** | Minutes to suppress duplicate alerts for same pod |
-| **Severity** | `warning` / `critical` |
-| **Channels** | Where to send alerts |
+| | **Community** | **Pro** *(coming soon)* | **Enterprise** *(coming soon)* |
+|---|---|---|---|
+| Clusters | 3 | Unlimited | Unlimited |
+| Alert channels | 2 | Unlimited | Unlimited |
+| AI diagnosis | ✅ | ✅ | ✅ |
+| Service owners | ❌ | ✅ | ✅ |
+| SSO / SAML | ❌ | ❌ | ✅ |
+| Audit logs | ❌ | ✅ | ✅ |
+| Priority support | ❌ | ✅ | ✅ dedicated |
+| Price | **Free** | **Coming soon** | **Contact us** |
 
----
-
-## 🤖 AI Diagnosis
-
-When an incident appears in the dashboard, click **"AI Diagnosis"** to get:
-
-- **Root cause analysis** — why the pod likely crashed
-- **Fix steps** — concrete commands to resolve it
-- **Prevention tips** — how to avoid recurrence
-
-Works with **OpenAI GPT-4**, **Anthropic Claude**, or **Ollama** (fully local, no internet).
+> ⭐ Star the repo to get notified when Pro launches.
 
 ---
 
-## 🔐 Security Notes
+## 🔐 Security
 
-- All channel configs (webhook URLs, SMTP passwords) are **encrypted at rest** in PostgreSQL using `ENCRYPTION_KEY`
+- Channel configs (webhook URLs, passwords) encrypted at rest in PostgreSQL
 - JWT tokens signed with `BACKEND_SECRET_KEY`
-- Redis should be **network-restricted** to your internal LAN — never expose port 6379 to the internet
-- Run behind a reverse proxy (nginx/Caddy) with TLS for production
-
----
-
-## 📁 Project Structure
-
-```
-loopzen/
-├── apps/
-│   ├── api/              # Fastify REST API (Node.js)
-│   ├── frontend/         # Next.js dashboard
-│   ├── alert-worker/     # Redis subscriber + alert dispatcher
-│   ├── ai-service/       # Python FastAPI — AI diagnosis
-│   └── watcher/          # Go K8s watcher agent
-├── docker-compose.yml    # One-command deployment
-├── .env.example          # All config variables documented
-└── README.md
-```
-
----
-
-## 🤝 Contributing
-
-1. Fork the repo
-2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Commit: `git commit -m 'feat: add my feature'`
-4. Push: `git push origin feat/my-feature`
-5. Open a Pull Request
+- Redis should be **LAN-only** — never expose port `6379` to the internet
+- Run behind nginx / Caddy with TLS for production
 
 ---
 
 ## 📄 License
 
-MIT — free to use, modify, and self-host. See [LICENSE](LICENSE).
+Loopzen is **source-available**. You may self-host it for personal or internal company use. Commercial redistribution, reselling, or offering it as a managed service requires a commercial license.
+
+See [LICENSE](LICENSE) for full terms.
 
 ---
 
@@ -572,5 +463,9 @@ MIT — free to use, modify, and self-host. See [LICENSE](LICENSE).
 <br/>
 
 ⚡ **Loopzen** — Stay calm when your pods don't.
+
+<br/>
+
+[🐳 Docker Hub](https://hub.docker.com/u/akshatsaini08) &nbsp;·&nbsp; [🐛 Issues](https://github.com/Akshatsainiaks/loopzen/issues)
 
 </div>
