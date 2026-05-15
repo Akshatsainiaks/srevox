@@ -1,12 +1,17 @@
 # ═══════════════════════════════════════════════════════════════
-#  Loopzen — Self-Hosted Docker Compose
-#  Usage: docker compose up -d
-#  Config: edit .env (copy from .env.example)
+#  Loopzen — Self-Hosted
+#  https://github.com/Akshatsainiaks/loopzen
+#
+#  Usage:
+#    curl -o docker-compose.yml https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/docker-compose.yml
+#    curl -o .env https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/.env.example
+#    nano .env
+#    docker compose up -d
 # ═══════════════════════════════════════════════════════════════
 
 services:
 
-  # ── PostgreSQL ────────────────────────────────────────────────
+  # ── Database ──────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: loopzen-postgres
@@ -25,14 +30,14 @@ services:
     networks:
       - loopzen
 
-  # ── Redis ─────────────────────────────────────────────────────
+  # ── Redis (pub/sub bus for crash events) ──────────────────────
   redis:
     image: redis:7-alpine
     container_name: loopzen-redis
     restart: unless-stopped
     command: redis-server --bind 0.0.0.0 --protected-mode no
     ports:
-      - "6379:6379"   # Exposed so K8s watcher agents can reach it
+      - "6379:6379"   # K8s watcher agents connect here
     volumes:
       - redis_data:/data
     healthcheck:
@@ -43,9 +48,9 @@ services:
     networks:
       - loopzen
 
-  # ── API (Fastify) ─────────────────────────────────────────────
+  # ── API ───────────────────────────────────────────────────────
   api:
-    image: ghcr.io/Akshatsainiaks/loopzen-api:latest
+    image: akshatsaini08/loopzen-api:latest
     container_name: loopzen-api
     restart: unless-stopped
     ports:
@@ -64,7 +69,7 @@ services:
 
   # ── Alert Worker ──────────────────────────────────────────────
   worker:
-    image: ghcr.io/Akshatsainiaks/loopzen-worker:latest
+    image: akshatsaini08/loopzen-worker:latest
     container_name: loopzen-worker
     restart: unless-stopped
     env_file: .env
@@ -79,9 +84,9 @@ services:
     networks:
       - loopzen
 
-  # ── AI Service (Python FastAPI) ───────────────────────────────
+  # ── AI Service ────────────────────────────────────────────────
   ai:
-    image: ghcr.io/Akshatsainiaks/loopzen-ai:latest
+    image: akshatsaini08/loopzen-ai:latest
     container_name: loopzen-ai
     restart: unless-stopped
     ports:
@@ -90,9 +95,9 @@ services:
     networks:
       - loopzen
 
-  # ── Frontend (Next.js) ────────────────────────────────────────
+  # ── Frontend (Dashboard) ──────────────────────────────────────
   frontend:
-    image: ghcr.io/Akshatsainiaks/loopzen-frontend:latest
+    image: akshatsaini08/loopzen-frontend:latest
     container_name: loopzen-frontend
     restart: unless-stopped
     ports:

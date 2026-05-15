@@ -3,6 +3,8 @@ name: Build & Push Docker Images
 on:
   push:
     branches: [main]
+    tags:
+      - "v*.*.*"
 
 jobs:
   build:
@@ -15,6 +17,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set version tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -22,37 +33,63 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build & Push API
         uses: docker/build-push-action@v5
         with:
           context: ./apps/api
           push: true
-          tags: ghcr.io/akshatsainiaks/loopzen-api:latest
+          tags: |
+            ghcr.io/akshatsainiaks/loopzen-api:latest
+            ghcr.io/akshatsainiaks/loopzen-api:${{ steps.version.outputs.tag }}
+            akshatsaini08/loopzen-api:latest
+            akshatsaini08/loopzen-api:${{ steps.version.outputs.tag }}
 
       - name: Build & Push Worker
         uses: docker/build-push-action@v5
         with:
           context: ./apps/alert-worker
           push: true
-          tags: ghcr.io/akshatsainiaks/loopzen-worker:latest
+          tags: |
+            ghcr.io/akshatsainiaks/loopzen-worker:latest
+            ghcr.io/akshatsainiaks/loopzen-worker:${{ steps.version.outputs.tag }}
+            akshatsaini08/loopzen-worker:latest
+            akshatsaini08/loopzen-worker:${{ steps.version.outputs.tag }}
 
       - name: Build & Push Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./apps/frontend
           push: true
-          tags: ghcr.io/akshatsainiaks/loopzen-frontend:latest
+          tags: |
+            ghcr.io/akshatsainiaks/loopzen-frontend:latest
+            ghcr.io/akshatsainiaks/loopzen-frontend:${{ steps.version.outputs.tag }}
+            akshatsaini08/loopzen-frontend:latest
+            akshatsaini08/loopzen-frontend:${{ steps.version.outputs.tag }}
 
       - name: Build & Push AI Service
         uses: docker/build-push-action@v5
         with:
           context: ./apps/backend
           push: true
-          tags: ghcr.io/akshatsainiaks/loopzen-ai:latest
+          tags: |
+            ghcr.io/akshatsainiaks/loopzen-ai:latest
+            ghcr.io/akshatsainiaks/loopzen-ai:${{ steps.version.outputs.tag }}
+            akshatsaini08/loopzen-ai:latest
+            akshatsaini08/loopzen-ai:${{ steps.version.outputs.tag }}
 
       - name: Build & Push Agent
         uses: docker/build-push-action@v5
         with:
           context: ./apps/watcher
           push: true
-          tags: ghcr.io/akshatsainiaks/loopzen-agent:latest
+          tags: |
+            ghcr.io/akshatsainiaks/loopzen-agent:latest
+            ghcr.io/akshatsainiaks/loopzen-agent:${{ steps.version.outputs.tag }}
+            akshatsaini08/loopzen-agent:latest
+            akshatsaini08/loopzen-agent:${{ steps.version.outputs.tag }}
