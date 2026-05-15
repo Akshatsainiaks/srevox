@@ -3,15 +3,11 @@
 #  https://github.com/Akshatsainiaks/loopzen
 #
 #  Usage:
-#    curl -o docker-compose.yml https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/docker-compose.yml
-#    curl -o .env https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/.env.example
-#    nano .env
-#    docker compose up -d
+#    curl -fsSL https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/setup.sh | bash
 # ═══════════════════════════════════════════════════════════════
 
 services:
 
-  # ── Database ──────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: loopzen-postgres
@@ -22,6 +18,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loopzen}"]
       interval: 10s
@@ -30,14 +27,13 @@ services:
     networks:
       - loopzen
 
-  # ── Redis (pub/sub bus for crash events) ──────────────────────
   redis:
     image: redis:7-alpine
     container_name: loopzen-redis
     restart: unless-stopped
     command: redis-server --bind 0.0.0.0 --protected-mode no
     ports:
-      - "6379:6379"   # K8s watcher agents connect here
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -48,7 +44,6 @@ services:
     networks:
       - loopzen
 
-  # ── API ───────────────────────────────────────────────────────
   api:
     image: akshatsaini08/loopzen-api:latest
     container_name: loopzen-api
@@ -67,7 +62,6 @@ services:
     networks:
       - loopzen
 
-  # ── Alert Worker ──────────────────────────────────────────────
   worker:
     image: akshatsaini08/loopzen-worker:latest
     container_name: loopzen-worker
@@ -84,7 +78,6 @@ services:
     networks:
       - loopzen
 
-  # ── AI Service ────────────────────────────────────────────────
   ai:
     image: akshatsaini08/loopzen-ai:latest
     container_name: loopzen-ai
@@ -95,7 +88,6 @@ services:
     networks:
       - loopzen
 
-  # ── Frontend (Dashboard) ──────────────────────────────────────
   frontend:
     image: akshatsaini08/loopzen-frontend:latest
     container_name: loopzen-frontend
