@@ -33,17 +33,6 @@ type CrashEvent struct {
 	DetectedAt    time.Time         `json:"detected_at"`
 }
 
-var watchedReasons = map[string]bool{
-	"CrashLoopBackOff":     true,
-	"OOMKilled":            true,
-	"Error":                true,
-	"BackOff":              true,
-	"ImagePullBackOff":     true,
-	"ErrImagePull":         true,
-	"CreateContainerError": true,
-	"RunContainerError":    true,
-}
-
 // Config for the watcher
 type Config struct {
 	KubeconfigPath  string
@@ -74,7 +63,6 @@ func NewWatcher(cfg Config) (*Watcher, error) {
 		return nil, err
 	}
 
-	// Conservative rate limits — read-only, event-driven
 	restCfg.QPS   = 5
 	restCfg.Burst = 10
 
