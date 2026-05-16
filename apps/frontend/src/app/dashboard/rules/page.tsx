@@ -120,7 +120,7 @@ export default function RulesPage() {
         <div className="card py-20 text-center">
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><BookOpen className="w-8 h-8 text-indigo-400" /></div>
           <p className="font-bold text-gray-800 dark:text-white mb-1">No alert rules yet</p>
-          <p className="text-sm text-gray-400 dark:text-slate-500 mb-6">Create a rule to define when Loopzen sends alerts</p>
+          <p className="text-sm text-gray-400 dark:text-slate-500 mb-6">Create a rule to define when Srevox sends alerts</p>
           <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Create first rule</button>
         </div>
       ) : (

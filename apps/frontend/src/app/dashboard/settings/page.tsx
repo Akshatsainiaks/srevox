@@ -148,7 +148,7 @@ export default function SettingsPage() {
           <Palette className="w-4 h-4 text-indigo-500" />
           <h2 className="font-bold text-gray-800 dark:text-white">Appearance</h2>
         </div>
-        <p className="text-sm text-gray-500 dark:text-slate-400">Choose how Loopzen looks for you.</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">Choose how Srevox looks for you.</p>
 
         <div className="grid grid-cols-3 gap-3">
           {THEMES.map((t) => {
@@ -311,7 +311,7 @@ export default function SettingsPage() {
           <h2 className="font-bold text-gray-800 dark:text-white">Platform info</h2>
         </div>
         <dl className="space-y-3 text-sm">
-          {[["Platform","Loopzen v1.0.0"],["API","Node.js + Fastify"],["AI service","Python + FastAPI"],["K8s watcher","Go"],["Alert worker","Node.js"],["Database","PostgreSQL 16"],["Cache/Queue","Redis 7"]].map(([k, v]) => (
+          {[["Platform","Srevox v1.0.0"],["API","Node.js + Fastify"],["AI service","Python + FastAPI"],["K8s watcher","Go"],["Alert worker","Node.js"],["Database","PostgreSQL 16"],["Cache/Queue","Redis 7"]].map(([k, v]) => (
             <div key={k} className="flex justify-between border-b border-gray-50 dark:border-slate-800 pb-3 last:border-0 last:pb-0">
               <dt className="text-gray-500 dark:text-slate-400">{k}</dt>
               <dd className="font-medium text-gray-800 dark:text-slate-200">{v}</dd>

@@ -54,14 +54,14 @@ await app.register(infrastructureRoutes, { prefix: "/api/infrastructure" });
 await app.register(resourceAlertRoutes,  { prefix: "/api/resource-alerts" });
 
 app.get("/health", async () => ({
-  status: "ok", service: "loopzen-api", version: "1.0.0",
+  status: "ok", service: "srevox-api", version: "1.0.0",
   timestamp: new Date().toISOString(),
 }));
 
 async function seedDefaults() {
   try {
     const [existing] = await sql`
-      SELECT id FROM users WHERE email = 'admin@loopzen.local' LIMIT 1
+      SELECT id FROM users WHERE email = 'admin@srevox.local' LIMIT 1
     `;
     if (!existing) {
       const hashed = await bcrypt.hash("admin123", 12);
@@ -70,10 +70,10 @@ async function seedDefaults() {
         VALUES (
           '00000000-0000-0000-0000-000000000002',
           '00000000-0000-0000-0000-000000000001',
-          'admin@loopzen.local', ${hashed}, 'Admin User', 'admin'
+          'admin@srevox.local', ${hashed}, 'Admin User', 'admin'
         ) ON CONFLICT DO NOTHING
       `;
-      console.log("✅ Default admin: admin@loopzen.local / admin123");
+      console.log("✅ Default admin: admin@srevox.local / admin123");
     }
   } catch (err) {
     console.warn("[seed] skipped:", err);
@@ -84,7 +84,7 @@ const PORT = Number(process.env.API_PORT || 4000);
 try {
   await seedDefaults();
   await app.listen({ port: PORT, host: "0.0.0.0" });
-  console.log(`🚀 Loopzen API running on http://localhost:${PORT}`);
+  console.log(`🚀 Srevox API running on http://localhost:${PORT}`);
 } catch (err) {
   app.log.error(err);
   process.exit(1);

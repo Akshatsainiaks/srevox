@@ -28,7 +28,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center animate-pulse">
             <Radio className="w-5 h-5 text-white" />
           </div>
-          <span className="text-sm text-gray-400">Loading Loopzen...</span>
+          <span className="text-sm text-gray-400">Loading Srevox...</span>
         </div>
       </div>
     );

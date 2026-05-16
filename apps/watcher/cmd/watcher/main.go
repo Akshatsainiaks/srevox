@@ -1,4 +1,4 @@
-// Loopzen K8s Watcher — Go
+// Srevox K8s Watcher — Go
 // Uses K8s Watch API (single persistent connection per cluster).
 package main
 
@@ -9,13 +9,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/loopzen/watcher/internal/k8s"
-	"github.com/loopzen/watcher/internal/publisher"
+	"github.com/srevox/watcher/internal/k8s"
+	"github.com/srevox/watcher/internal/publisher"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("🔭 Loopzen Watcher starting...")
+	log.Println("🔭 Srevox Watcher starting...")
 
 	redisURL   := getEnv("REDIS_URL",    "redis://192.168.133.150:6379")
 	clusterID  := getEnv("CLUSTER_ID",  "bf151459-9dd0-4298-a70c-bad244c7efcb")
@@ -39,7 +39,7 @@ func main() {
 		ClusterName:     clusterName,
 		WatchNamespaces: getEnv("WATCH_NAMESPACES", ""),
 		Publisher:       pub,
-		RedisChannel:    "loopzen:crashes",
+		RedisChannel:    "srevox:crashes",
 	})
 	if err != nil {
 		log.Fatalf("K8s watcher init failed: %v", err)

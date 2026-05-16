@@ -36,7 +36,7 @@ export async function sendEmail(
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
         <div>
-          <div style="color:rgba(255,255,255,0.85);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Loopzen Alert</div>
+          <div style="color:rgba(255,255,255,0.85);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Srevox Alert</div>
           <div style="color:white;font-size:18px;font-weight:700;margin-top:2px;">Pod Crash Detected — ${severity.toUpperCase()}</div>
         </div>
       </div>
@@ -75,7 +75,7 @@ export async function sendEmail(
     <!-- Footer -->
     <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
       <p style="margin:0;font-size:12px;color:#94a3b8;">
-        <strong style="color:#6366f1;">Loopzen</strong> — Stay calm. We'll catch the crash loops.
+        <strong style="color:#6366f1;">Srevox</strong> — Stay calm. We'll catch the crash loops.
         <br>Incident ID: <code style="font-size:11px;">${incidentId}</code>
       </p>
     </div>
@@ -84,9 +84,9 @@ export async function sendEmail(
 </html>`;
 
   await transporter.sendMail({
-    from:    `"Loopzen Alerts" <${config.from || config.smtp_user}>`,
+    from:    `"Srevox Alerts" <${config.from || config.smtp_user}>`,
     to:      recipients.join(", "),
-    subject: `[Loopzen ${severity.toUpperCase()}] ${event.pod_name} crashed — ${event.crash_reason}`,
+    subject: `[Srevox ${severity.toUpperCase()}] ${event.pod_name} crashed — ${event.crash_reason}`,
     html,
   });
 

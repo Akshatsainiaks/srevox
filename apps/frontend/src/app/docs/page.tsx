@@ -56,7 +56,7 @@ function Callout({ type, children, dark: d }: { type: "info"|"warning"|"success"
 }
 
 const NAV = [
-  { id:"intro", title:"Introduction", icon:BookOpen, items:[{id:"what",title:"What is Loopzen?"},{id:"how",title:"How it works"},{id:"arch",title:"Architecture"},{id:"qs",title:"Quick start (5 min)"}]},
+  { id:"intro", title:"Introduction", icon:BookOpen, items:[{id:"what",title:"What is Srevox?"},{id:"how",title:"How it works"},{id:"arch",title:"Architecture"},{id:"qs",title:"Quick start (5 min)"}]},
   { id:"clusters", title:"Clusters", icon:Server, items:[{id:"connect",title:"Connect a cluster"},{id:"agent",title:"Agent installation"},{id:"kubeconfig",title:"Kubeconfig method"},{id:"rbac",title:"RBAC permissions"}]},
   { id:"channels", title:"Alert Channels", icon:Bell, items:[{id:"email",title:"Email / Gmail"},{id:"teams",title:"Microsoft Teams"},{id:"whatsapp",title:"WhatsApp"},{id:"webhook",title:"Webhook / Slack"}]},
   { id:"rules", title:"Alert Rules", icon:Shield, items:[{id:"rule-create",title:"Creating rules"},{id:"noise",title:"Noise control"},{id:"reasons",title:"Crash reasons"}]},
@@ -73,8 +73,8 @@ function Content({ id, dark: d }: { id: string; dark: boolean }) {
 
   const map: Record<string, React.ReactNode> = {
     what: (<>
-      <h1 className={h2}>What is Loopzen?</h1>
-      <p className={p}>Loopzen is an open-source Kubernetes pod crash alerting platform. It watches your clusters 24/7 using the K8s Watch API and instantly notifies your team when pods crash — with AI-powered root cause analysis.</p>
+      <h1 className={h2}>What is Srevox?</h1>
+      <p className={p}>Srevox is an open-source Kubernetes pod crash alerting platform. It watches your clusters 24/7 using the K8s Watch API and instantly notifies your team when pods crash — with AI-powered root cause analysis.</p>
       <Callout type="tip" dark={d}>Loop = CrashLoopBackOff. Zen = staying calm. Together: staying in control of your K8s incidents.</Callout>
       <h3 className={h3}>Key features</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
@@ -88,9 +88,9 @@ function Content({ id, dark: d }: { id: string; dark: boolean }) {
     </>),
     how: (<>
       <h1 className={h2}>How it works</h1>
-      <p className={p}>Loopzen uses the Kubernetes Watch API — a single persistent connection per cluster. K8s pushes events the moment they happen.</p>
+      <p className={p}>Srevox uses the Kubernetes Watch API — a single persistent connection per cluster. K8s pushes events the moment they happen.</p>
       <div className="space-y-4 my-6">
-        {[["1","Go watcher connects","Opens a Watch stream on the Pods API. K8s pushes every pod state change in real-time."],["2","Crash event → Redis","When OOMKilled or CrashLoopBackOff detected, publishes JSON to Redis channel loopzen:crashes."],["3","Alert worker processes","Node.js worker subscribes, matches alert rules, applies noise filters, sends alerts."],["4","Incident stored","Saved to PostgreSQL. View, acknowledge, resolve, or trigger AI diagnosis."]].map(([n,t,dd])=>(
+        {[["1","Go watcher connects","Opens a Watch stream on the Pods API. K8s pushes every pod state change in real-time."],["2","Crash event → Redis","When OOMKilled or CrashLoopBackOff detected, publishes JSON to Redis channel srevox:crashes."],["3","Alert worker processes","Node.js worker subscribes, matches alert rules, applies noise filters, sends alerts."],["4","Incident stored","Saved to PostgreSQL. View, acknowledge, resolve, or trigger AI diagnosis."]].map(([n,t,dd])=>(
           <div key={n} className={`flex gap-4 p-4 rounded-2xl border ${d?"bg-slate-800/30 border-slate-700":"bg-white border-gray-200"}`}>
             <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shrink-0">{n}</div>
             <div><div className={`font-semibold text-sm ${d?"text-slate-200":"text-gray-800"}`}>{t}</div><div className={`text-xs mt-1 ${d?"text-slate-500":"text-gray-500"}`}>{dd}</div></div>
@@ -102,28 +102,28 @@ function Content({ id, dark: d }: { id: string; dark: boolean }) {
       <h1 className={h2}>Quick start</h1>
       <Callout type="info" dark={d}>Prerequisites: Node.js 18+, Python 3.10+, Go 1.21+, PostgreSQL 16, Redis 7</Callout>
       {[["1. Start the API","cd apps/api\nnpm install\nnpm run dev"],["2. Start AI service","cd apps/backend\npip install -r requirements.txt\nuvicorn ai_service:app --port 8000 --reload"],["3. Start alert worker","cd apps/alert-worker\nnpm install\nnpm run dev"],["4. Start frontend","cd apps/frontend\nnpm install\nnpm run dev"]].map(([t,c])=><div key={String(t)}><h3 className={h3}>{t}</h3><CodeBlock code={String(c)} dark={d}/></div>)}
-      <Callout type="success" dark={d}>Default login: admin@loopzen.local / admin123</Callout>
+      <Callout type="success" dark={d}>Default login: admin@srevox.local / admin123</Callout>
     </>),
     agent: (<>
       <h1 className={h2}>Agent installation</h1>
-      <p className={p}>The Loopzen agent runs as a Deployment inside your cluster. Connects outbound to Redis — no inbound firewall rules needed.</p>
+      <p className={p}>The Srevox agent runs as a Deployment inside your cluster. Connects outbound to Redis — no inbound firewall rules needed.</p>
       <CodeBlock dark={d} code={`kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: loopzen-agent
+  name: srevox-agent
   namespace: kube-system
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: loopzen-agent }
+    matchLabels: { app: srevox-agent }
   template:
     metadata:
-      labels: { app: loopzen-agent }
+      labels: { app: srevox-agent }
     spec:
       containers:
       - name: agent
-        image: loopzen/agent:latest
+        image: srevox/agent:latest
         env:
         - name: REDIS_URL
           value: "redis://YOUR_REDIS:6379"
@@ -149,14 +149,14 @@ EOF`}/>
           </tbody>
         </table>
       </div>
-      <Callout type="info" dark={d}>Gmail: myaccount.google.com → Security → 2-Step Verification → App passwords → Create "Loopzen"</Callout>
+      <Callout type="info" dark={d}>Gmail: myaccount.google.com → Security → 2-Step Verification → App passwords → Create "Srevox"</Callout>
     </>),
     "k8s-redis": (<>
       <h1 className={h2}>Test via Redis</h1>
       <p className={p}>Manually publish a crash event to test the full alert pipeline without a real K8s cluster.</p>
       <Callout type="tip" dark={d}>Make sure you have a cluster added in the dashboard and an alert rule pointing to that cluster_id first.</Callout>
       <h3 className={h3}>Publish test crash event</h3>
-      <CodeBlock dark={d} code={`docker exec podwatch-redis redis-cli PUBLISH loopzen:crashes '{
+      <CodeBlock dark={d} code={`docker exec podwatch-redis redis-cli PUBLISH srevox:crashes '{
   "cluster_id": "YOUR_CLUSTER_UUID_HERE",
   "pod_name": "payment-service-abc123",
   "namespace": "backend",
@@ -238,7 +238,7 @@ export default function DocsPage() {
           <div style={{ width:"28px", height:"28px", borderRadius:"7px", background:"linear-gradient(135deg,#6366f1,#7c3aed)", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <Radio style={{ width:"14px", height:"14px", color:"white" }} />
           </div>
-          <span style={{ fontWeight:700, fontSize:"15px", color:txt }}>Loopzen</span>
+          <span style={{ fontWeight:700, fontSize:"15px", color:txt }}>Srevox</span>
           <span style={{ color:muted }}>/</span>
           <span style={{ fontSize:"14px", color:muted }}>Docs</span>
         </Link>
@@ -293,7 +293,7 @@ export default function DocsPage() {
             ))}
           </div>
           <div style={{ padding:"12px", borderTop:`1px solid ${bdr}`, textAlign:"center", fontSize:"11px", color:muted }}>
-            Loopzen · Open source · MIT
+            Srevox · Open source · MIT
           </div>
         </aside>
 

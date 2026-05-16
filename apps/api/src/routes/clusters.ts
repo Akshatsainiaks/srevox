@@ -55,7 +55,7 @@ export default async function clusterRoutes(app: FastifyInstance) {
     return {
       id, name, connection_type, agent_token, status: "pending",
       install_command: agent_token
-        ? `kubectl apply -f https://app.loopzen.io/agent.yaml?token=${agent_token}`
+        ? `kubectl apply -f https://app.srevox.io/agent.yaml?token=${agent_token}`
         : null,
     };
   });

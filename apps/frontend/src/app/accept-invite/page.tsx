@@ -57,7 +57,7 @@ function AcceptInviteForm() {
               <Radio className="w-7 h-7 text-white" />
             </div>
             <div>
-              <div className="font-bold text-gray-900 text-xl">Loopzen</div>
+              <div className="font-bold text-gray-900 text-xl">Srevox</div>
               <div className="text-sm text-gray-500">You've been invited to join</div>
             </div>
           </Link>
@@ -66,7 +66,7 @@ function AcceptInviteForm() {
         {done ? (
           <div className="card p-8 text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-            <p className="font-bold text-gray-900 text-lg">Welcome to Loopzen!</p>
+            <p className="font-bold text-gray-900 text-lg">Welcome to Srevox!</p>
             <p className="text-sm text-gray-500 mt-1">Redirecting to dashboard...</p>
           </div>
         ) : (

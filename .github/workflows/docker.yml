@@ -45,10 +45,10 @@ jobs:
           context: ./apps/api
           push: true
           tags: |
-            ghcr.io/akshatsainiaks/loopzen-api:latest
-            ghcr.io/akshatsainiaks/loopzen-api:${{ steps.version.outputs.tag }}
-            akshatsaini08/loopzen-api:latest
-            akshatsaini08/loopzen-api:${{ steps.version.outputs.tag }}
+            ghcr.io/akshatsainiaks/srevox-api:latest
+            ghcr.io/akshatsainiaks/srevox-api:${{ steps.version.outputs.tag }}
+            akshatsaini08/srevox-api:latest
+            akshatsaini08/srevox-api:${{ steps.version.outputs.tag }}
 
       - name: Build & Push Worker
         uses: docker/build-push-action@v5
@@ -56,10 +56,10 @@ jobs:
           context: ./apps/alert-worker
           push: true
           tags: |
-            ghcr.io/akshatsainiaks/loopzen-worker:latest
-            ghcr.io/akshatsainiaks/loopzen-worker:${{ steps.version.outputs.tag }}
-            akshatsaini08/loopzen-worker:latest
-            akshatsaini08/loopzen-worker:${{ steps.version.outputs.tag }}
+            ghcr.io/akshatsainiaks/srevox-worker:latest
+            ghcr.io/akshatsainiaks/srevox-worker:${{ steps.version.outputs.tag }}
+            akshatsaini08/srevox-worker:latest
+            akshatsaini08/srevox-worker:${{ steps.version.outputs.tag }}
 
       - name: Build & Push Frontend
         uses: docker/build-push-action@v5
@@ -67,10 +67,10 @@ jobs:
           context: ./apps/frontend
           push: true
           tags: |
-            ghcr.io/akshatsainiaks/loopzen-frontend:latest
-            ghcr.io/akshatsainiaks/loopzen-frontend:${{ steps.version.outputs.tag }}
-            akshatsaini08/loopzen-frontend:latest
-            akshatsaini08/loopzen-frontend:${{ steps.version.outputs.tag }}
+            ghcr.io/akshatsainiaks/srevox-frontend:latest
+            ghcr.io/akshatsainiaks/srevox-frontend:${{ steps.version.outputs.tag }}
+            akshatsaini08/srevox-frontend:latest
+            akshatsaini08/srevox-frontend:${{ steps.version.outputs.tag }}
 
       - name: Build & Push AI Service
         uses: docker/build-push-action@v5
@@ -78,10 +78,10 @@ jobs:
           context: ./apps/backend
           push: true
           tags: |
-            ghcr.io/akshatsainiaks/loopzen-ai:latest
-            ghcr.io/akshatsainiaks/loopzen-ai:${{ steps.version.outputs.tag }}
-            akshatsaini08/loopzen-ai:latest
-            akshatsaini08/loopzen-ai:${{ steps.version.outputs.tag }}
+            ghcr.io/akshatsainiaks/srevox-ai:latest
+            ghcr.io/akshatsainiaks/srevox-ai:${{ steps.version.outputs.tag }}
+            akshatsaini08/srevox-ai:latest
+            akshatsaini08/srevox-ai:${{ steps.version.outputs.tag }}
 
       - name: Build & Push Agent
         uses: docker/build-push-action@v5
@@ -89,7 +89,7 @@ jobs:
           context: ./apps/watcher
           push: true
           tags: |
-            ghcr.io/akshatsainiaks/loopzen-agent:latest
-            ghcr.io/akshatsainiaks/loopzen-agent:${{ steps.version.outputs.tag }}
-            akshatsaini08/loopzen-agent:latest
-            akshatsaini08/loopzen-agent:${{ steps.version.outputs.tag }}
+            ghcr.io/akshatsainiaks/srevox-agent:latest
+            ghcr.io/akshatsainiaks/srevox-agent:${{ steps.version.outputs.tag }}
+            akshatsaini08/srevox-agent:latest
+            akshatsaini08/srevox-agent:${{ steps.version.outputs.tag }}

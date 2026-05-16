@@ -1,26 +1,26 @@
 # ═══════════════════════════════════════════════════════════════
-#  Loopzen — K8s Watcher Agent
+#  Srevox — K8s Watcher Agent
 #
 #  Deploy this into each cluster you want to monitor.
 #  Steps:
-#    1. Replace YOUR_LOOPZEN_REDIS_HOST with your Loopzen server IP
+#    1. Replace YOUR_SREVOX_REDIS_HOST with your Srevox server IP
 #    2. Replace YOUR_CLUSTER_UUID with the UUID from Dashboard → Clusters → Add
 #    3. Replace YOUR_CLUSTER_NAME with a friendly name
-#    4. kubectl apply -f loopzen-agent.yml
+#    4. kubectl apply -f srevox-agent.yml
 # ═══════════════════════════════════════════════════════════════
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: loopzen-agent
+  name: srevox-agent
   namespace: kube-system
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: loopzen-agent
+  name: srevox-agent
 rules:
   - apiGroups: [""]
     resources: ["pods"]
@@ -30,42 +30,42 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: loopzen-agent
+  name: srevox-agent
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: loopzen-agent
+  name: srevox-agent
 subjects:
   - kind: ServiceAccount
-    name: loopzen-agent
+    name: srevox-agent
     namespace: kube-system
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: loopzen-agent
+  name: srevox-agent
   namespace: kube-system
   labels:
-    app: loopzen-agent
+    app: srevox-agent
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: loopzen-agent
+      app: srevox-agent
   template:
     metadata:
       labels:
-        app: loopzen-agent
+        app: srevox-agent
     spec:
-      serviceAccountName: loopzen-agent
+      serviceAccountName: srevox-agent
       containers:
         - name: agent
-          image: ghcr.io/Akshatsainiaks/loopzen-agent:latest
+          image: ghcr.io/Akshatsainiaks/srevox-agent:latest
           imagePullPolicy: Always
           env:
             - name: REDIS_URL
-              value: "redis://YOUR_LOOPZEN_REDIS_HOST:6379"
+              value: "redis://YOUR_SREVOX_REDIS_HOST:6379"
             - name: CLUSTER_ID
               value: "YOUR_CLUSTER_UUID"
             - name: CLUSTER_NAME

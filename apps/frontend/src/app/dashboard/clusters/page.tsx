@@ -9,8 +9,8 @@ import { useConfirm } from "@/components/ConfirmModal";
 
 const CONN_INFO: Record<string, { label: string; desc: string; color: string }> = {
   agent:       { label: "Agent (on-prem)",  desc: "Tiny pod inside your cluster. Outbound only — no inbound firewall rules.", color: "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20" },
-  kubeconfig:  { label: "Kubeconfig",       desc: "Upload a read-only kubeconfig. API server must be reachable from Loopzen.", color: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20" },
-  self_hosted: { label: "Self-hosted",      desc: "Run Loopzen entirely inside your own infrastructure.", color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-600" },
+  kubeconfig:  { label: "Kubeconfig",       desc: "Upload a read-only kubeconfig. API server must be reachable from Srevox.", color: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20" },
+  self_hosted: { label: "Self-hosted",      desc: "Run Srevox entirely inside your own infrastructure.", color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-600" },
 };
 const CLOUD_PROVIDERS = ["aws","gcp","azure","on-prem","other"];
 
@@ -43,7 +43,7 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-[#1e2130]">
           <div>
             <h2 className="font-bold text-gray-900 dark:text-white">Add cluster</h2>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Connect a Kubernetes cluster to Loopzen</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Connect a Kubernetes cluster to Srevox</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 text-xl">&times;</button>
         </div>
@@ -236,7 +236,7 @@ export default function ClustersPage() {
         <span className="text-lg shrink-0">🔒</span>
         <div>
           <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Read-only access only</p>
-          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">Loopzen only watches pod events. It never modifies your cluster. The agent uses a read-only ClusterRole scoped to pods and events only.</p>
+          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">Srevox only watches pod events. It never modifies your cluster. The agent uses a read-only ClusterRole scoped to pods and events only.</p>
         </div>
       </div>
     </div>

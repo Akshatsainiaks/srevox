@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, CheckCircle, ArrowLeft } from "lucide-react";
 import { apiSignup } from "@/lib/api";
 import { setToken, setUser } from "@/lib/auth";
-import { LoopzenLogo } from "@/components/Logo";
+import { SrevoxLogo } from "@/components/Logo";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -42,9 +42,9 @@ export default function SignupPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
-            <LoopzenLogo size={52} />
+            <SrevoxLogo size={52} />
             <div>
-              <div className="font-bold text-gray-900 text-2xl">Loopzen</div>
+              <div className="font-bold text-gray-900 text-2xl">Srevox</div>
               <div className="text-sm text-gray-400 mt-0.5">Start monitoring in 8 minutes</div>
             </div>
           </Link>

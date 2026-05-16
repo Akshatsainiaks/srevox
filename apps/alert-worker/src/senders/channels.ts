@@ -28,7 +28,7 @@ export async function sendTeams(
         body: [
           {
             type: "TextBlock",
-            text: `🔔 Loopzen — Pod Crash (${severity.toUpperCase()})`,
+            text: `🔔 Srevox — Pod Crash (${severity.toUpperCase()})`,
             weight: "Bolder",
             size: "Medium",
             color,
@@ -72,7 +72,7 @@ export async function sendWhatsApp(
   const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/incidents/${incidentId}`;
 
   const message = [
-    `${emoji} *Loopzen Alert — ${severity.toUpperCase()}*`,
+    `${emoji} *Srevox Alert — ${severity.toUpperCase()}*`,
     ``,
     `*Pod:* ${event.pod_name}`,
     `*Namespace:* ${event.namespace}`,
@@ -137,7 +137,7 @@ export async function sendWebhook(
   const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/incidents/${incidentId}`;
 
   const payload = {
-    source:       "loopzen",
+    source:       "srevox",
     incident_id:  incidentId,
     severity,
     cluster_id:   event.cluster_id,
@@ -152,13 +152,13 @@ export async function sendWebhook(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "User-Agent":   "Loopzen/1.0",
+    "User-Agent":   "Srevox/1.0",
   };
 
   if (config.secret) {
     const sig = import_crypto.createHmac("sha256", config.secret)
       .update(JSON.stringify(payload)).digest("hex");
-    headers["X-Loopzen-Signature"] = `sha256=${sig}`;
+    headers["X-Srevox-Signature"] = `sha256=${sig}`;
   }
 
   await axios.post(config.url, payload, { headers, timeout: 10000 });

@@ -1,35 +1,35 @@
 # ═══════════════════════════════════════════════════════════════
-#  Loopzen — Self-Hosted
-#  https://github.com/Akshatsainiaks/loopzen
+#  Srevox — Self-Hosted
+#  https://github.com/Akshatsainiaks/srevox
 #
 #  Usage:
-#    curl -fsSL https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/setup.sh | bash
+#    curl -fsSL https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/setup.sh | bash
 # ═══════════════════════════════════════════════════════════════
 
 services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: loopzen-postgres
+    container_name: srevox-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       ${POSTGRES_DB:-loopzen}
-      POSTGRES_USER:     ${POSTGRES_USER:-loopzen}
+      POSTGRES_DB:       ${POSTGRES_DB:-srevox}
+      POSTGRES_USER:     ${POSTGRES_USER:-srevox}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loopzen}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-srevox}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - loopzen
+      - srevox
 
   redis:
     image: redis:7-alpine
-    container_name: loopzen-redis
+    container_name: srevox-redis
     restart: unless-stopped
     command: redis-server --bind 0.0.0.0 --protected-mode no
     ports:
@@ -42,11 +42,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - loopzen
+      - srevox
 
   api:
-    image: akshatsaini08/loopzen-api:latest
-    container_name: loopzen-api
+    image: akshatsaini08/srevox-api:latest
+    container_name: srevox-api
     restart: unless-stopped
     ports:
       - "${API_PORT:-4000}:4000"
@@ -60,11 +60,11 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - loopzen
+      - srevox
 
   worker:
-    image: akshatsaini08/loopzen-worker:latest
-    container_name: loopzen-worker
+    image: akshatsaini08/srevox-worker:latest
+    container_name: srevox-worker
     restart: unless-stopped
     env_file: .env
     environment:
@@ -76,21 +76,21 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - loopzen
+      - srevox
 
   ai:
-    image: akshatsaini08/loopzen-ai:latest
-    container_name: loopzen-ai
+    image: akshatsaini08/srevox-ai:latest
+    container_name: srevox-ai
     restart: unless-stopped
     ports:
       - "8000:8000"
     env_file: .env
     networks:
-      - loopzen
+      - srevox
 
   frontend:
-    image: akshatsaini08/loopzen-frontend:latest
-    container_name: loopzen-frontend
+    image: akshatsaini08/srevox-frontend:latest
+    container_name: srevox-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -100,12 +100,12 @@ services:
     depends_on:
       - api
     networks:
-      - loopzen
+      - srevox
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  loopzen:
+  srevox:
     driver: bridge

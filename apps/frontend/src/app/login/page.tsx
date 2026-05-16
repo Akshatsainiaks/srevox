@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { apiLogin } from "@/lib/api";
 import { setToken, setUser } from "@/lib/auth";
-import { LoopzenLogo } from "@/components/Logo";
+import { SrevoxLogo } from "@/components/Logo";
 import { applyDashboardTheme } from "@/components/ThemeProvider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email,    setEmail]    = useState("admin@loopzen.local");
+  const [email,    setEmail]    = useState("admin@srevox.local");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error,    setError]    = useState("");
@@ -49,9 +49,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
-            <LoopzenLogo size={52} />
+            <SrevoxLogo size={52} />
             <div>
-              <div className="font-bold text-gray-900 text-2xl tracking-tight">Loopzen</div>
+              <div className="font-bold text-gray-900 text-2xl tracking-tight">Srevox</div>
               <div className="text-sm text-gray-400 mt-0.5">Stay calm. We'll catch the crash loops.</div>
             </div>
           </Link>
@@ -104,7 +104,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-gray-300 mt-5">admin@loopzen.local / admin123</p>
+        <p className="text-center text-xs text-gray-300 mt-5">admin@srevox.local / admin123</p>
       </div>
     </div>
   );

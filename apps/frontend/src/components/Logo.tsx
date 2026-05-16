@@ -1,4 +1,4 @@
-export function LoopzenLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
+export function SrevoxLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
       <rect width="40" height="40" rx="10" fill="url(#lz-g1)" />
@@ -22,7 +22,7 @@ export function LoopzenLogo({ size = 32, className = "" }: { size?: number; clas
   );
 }
 
-export function LoopzenWordmark({ size = "md", forceDark = false }: { size?: "sm" | "md" | "lg"; forceDark?: boolean }) {
+export function SrevoxWordmark({ size = "md", forceDark = false }: { size?: "sm" | "md" | "lg"; forceDark?: boolean }) {
   const dims = { sm: 28, md: 34, lg: 42 };
   const ts   = { sm: "text-sm", md: "text-base", lg: "text-xl" };
   const ss   = { sm: "text-[9px]", md: "text-[10px]", lg: "text-xs" };
@@ -30,10 +30,10 @@ export function LoopzenWordmark({ size = "md", forceDark = false }: { size?: "sm
   const subColor  = forceDark ? "text-indigo-200" : "text-gray-400 dark:text-slate-500";
   return (
     <div className="flex items-center gap-2.5">
-      <LoopzenLogo size={dims[size]} />
+      <SrevoxLogo size={dims[size]} />
       <div>
-        <div className={`font-bold leading-tight ${ts[size]} ${textColor}`}>Loopzen</div>
-        {size !== "sm" && <div className={`leading-tight ${ss[size]} ${subColor}`}>K8s crash alerting</div>}
+        <div className={`font-bold leading-tight ${ts[size]} ${textColor}`}>Srevox</div>
+        {size !== "sm" && <div className={`leading-tight ${ss[size]} ${subColor}`}>Catch crashes before your users do.</div>}
       </div>
     </div>
   );

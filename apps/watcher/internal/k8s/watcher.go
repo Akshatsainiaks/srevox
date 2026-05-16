@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/loopzen/watcher/internal/publisher"
+	"github.com/srevox/watcher/internal/publisher"
 )
 
 // CrashEvent is published to Redis
@@ -196,7 +196,7 @@ func (w *Watcher) handlePodEvent(event watch.Event) {
 
 		ch := w.config.RedisChannel
 		if ch == "" {
-			ch = "loopzen:crashes"
+			ch = "srevox:crashes"
 		}
 
 		if err := w.config.Publisher.Publish(context.Background(), ch, string(payload)); err != nil {

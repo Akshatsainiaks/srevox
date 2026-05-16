@@ -1,8 +1,8 @@
-<!-- # 🔭 Loopzen
+<!-- # 🔭 Srevox
 
 **Stay calm. We'll catch the crash loops.**
 
-Loopzen is a Kubernetes pod crash alerting platform with AI-powered diagnostics.
+Srevox is a Kubernetes pod crash alerting platform with AI-powered diagnostics.
 Instant alerts via Email, Microsoft Teams, WhatsApp, and Webhooks when your pods fail.
 
 ## Architecture
@@ -36,13 +36,13 @@ cd apps/frontend && npm install && npm run dev
 
 Open http://localhost:3000
 
-Default login: `admin@loopzen.local` / `admin123`
+Default login: `admin@srevox.local` / `admin123`
 
 ## Database Setup
 
 ```bash
 # On your PostgreSQL server:
-psql -U loopzen -d loopzen < infra/docker/postgres/init.sql
+psql -U srevox -d srevox < infra/docker/postgres/init.sql
 ```
 
 ## Environment Variables
@@ -57,26 +57,26 @@ Copy `.env.example` to `.env` and fill in:
 
 ## Redis Channel
 
-The Go watcher and alert worker communicate via Redis pub/sub on channel `loopzen:crashes`.
+The Go watcher and alert worker communicate via Redis pub/sub on channel `srevox:crashes`.
 
 Test manually:
 ```bash
-redis-cli PUBLISH loopzen:crashes '{"cluster_id":"YOUR_CLUSTER_ID","pod_name":"test-pod","namespace":"production","container_name":"app","crash_reason":"OOMKilled","restart_count":5,"pod_labels":{},"raw_event":{},"detected_at":"2026-03-22T10:00:00Z"}'
+redis-cli PUBLISH srevox:crashes '{"cluster_id":"YOUR_CLUSTER_ID","pod_name":"test-pod","namespace":"production","container_name":"app","crash_reason":"OOMKilled","restart_count":5,"pod_labels":{},"raw_event":{},"detected_at":"2026-03-22T10:00:00Z"}'
 ``` -->
 
 <div align="center">
 
 <br/>
 
-<img src="https://img.shields.io/badge/-%E2%9A%A1%20LOOPZEN-6366f1?style=for-the-badge&logoColor=white&labelColor=0d0f17" height="52"/>
+<img src="https://img.shields.io/badge/-%E2%9A%A1%20SREVOX-6366f1?style=for-the-badge&logoColor=white&labelColor=0d0f17" height="52"/>
 
 <h3>Kubernetes Pod Crash Alerting — Self-Hosted</h3>
 <p><i>Loop = CrashLoopBackOff &nbsp;·&nbsp; Zen = staying calm.</i></p>
 
 <br/>
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/akshatsaini08/loopzen-api?style=flat-square&logo=docker&label=Docker%20Pulls&color=0ea5e9)](https://hub.docker.com/u/akshatsaini08)
-[![GitHub Release](https://img.shields.io/github/v/release/Akshatsainiaks/loopzen?style=flat-square&color=6366f1)](https://github.com/Akshatsainiaks/loopzen/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/akshatsaini08/srevox-api?style=flat-square&logo=docker&label=Docker%20Pulls&color=0ea5e9)](https://hub.docker.com/u/akshatsaini08)
+[![GitHub Release](https://img.shields.io/github/v/release/Akshatsainiaks/srevox?style=flat-square&color=6366f1)](https://github.com/Akshatsainiaks/srevox/releases)
 [![License](https://img.shields.io/badge/License-Source%20Available-6366f1.svg?style=flat-square)](#license)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go)](https://golang.org)
 [![Node](https://img.shields.io/badge/Node-18+-339933?style=flat-square&logo=node.js)](https://nodejs.org)
@@ -97,9 +97,9 @@ Pod crashes → Go watcher → Redis → Alert worker → Your team notified in 
 
 ---
 
-## What is Loopzen?
+## What is Srevox?
 
-Loopzen watches your Kubernetes clusters 24/7 using the **K8s Watch API** — a single persistent connection, no polling — and instantly notifies your team the moment a pod crashes.
+Srevox watches your Kubernetes clusters 24/7 using the **K8s Watch API** — a single persistent connection, no polling — and instantly notifies your team the moment a pod crashes.
 
 Built for teams running **on-premises, VMware, bare metal, private cloud, or air-gapped** infrastructure. No data leaves your network.
 
@@ -127,13 +127,13 @@ Built for teams running **on-premises, VMware, bare metal, private cloud, or air
 ### 1. Download config files
 
 ```bash
-mkdir loopzen && cd loopzen
+mkdir srevox && cd srevox
 
 curl -o docker-compose.yml \
-  https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/docker-compose.yml
+  https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/docker-compose.yml
 
 curl -o .env \
-  https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/.env.example
+  https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/.env.example
 ```
 
 ### 2. Configure your `.env`
@@ -165,21 +165,21 @@ Docker pulls all images automatically. No Node, Go, or Python needed.
 | Dashboard | `http://YOUR_SERVER_IP:3000` |
 | API | `http://YOUR_SERVER_IP:4000` |
 
-**Default login:** `admin@loopzen.local` / `admin123`
+**Default login:** `admin@srevox.local` / `admin123`
 > ⚠️ Change the default password immediately after first login.
 
 ### 4. Connect your cluster
 
 ```bash
 kubectl apply -f \
-  https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main/loopzen-agent.yml
+  https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/srevox-agent.yml
 ```
 
 Then set your cluster details:
 
 ```bash
-kubectl set env deployment/loopzen-agent -n kube-system \
-  REDIS_URL=redis://YOUR_LOOPZEN_IP:6379 \
+kubectl set env deployment/srevox-agent -n kube-system \
+  REDIS_URL=redis://YOUR_SREVOX_IP:6379 \
   CLUSTER_ID=YOUR_UUID_FROM_DASHBOARD \
   CLUSTER_NAME=production
 ```
@@ -214,7 +214,7 @@ Get your `CLUSTER_ID` from: **Dashboard → Clusters → Add Cluster**
 **Crash flow:**
 1. Go watcher opens a Watch stream on the K8s Pods API
 2. Pod enters `OOMKilled` / `CrashLoopBackOff` / `Error`
-3. Watcher publishes JSON → Redis `loopzen:crashes`
+3. Watcher publishes JSON → Redis `srevox:crashes`
 4. Alert worker matches rules, applies filters, sends alerts
 5. Incident saved to PostgreSQL — view, acknowledge, AI diagnose
 
@@ -226,17 +226,17 @@ All images on Docker Hub — pulled automatically by `docker compose up`:
 
 | Image | Tag |
 |---|---|
-| `akshatsaini08/loopzen-api` | `latest` / `v1.0.0` |
-| `akshatsaini08/loopzen-frontend` | `latest` / `v1.0.0` |
-| `akshatsaini08/loopzen-worker` | `latest` / `v1.0.0` |
-| `akshatsaini08/loopzen-ai` | `latest` / `v1.0.0` |
-| `akshatsaini08/loopzen-agent` | `latest` / `v1.0.0` |
+| `akshatsaini08/srevox-api` | `latest` / `v1.0.0` |
+| `akshatsaini08/srevox-frontend` | `latest` / `v1.0.0` |
+| `akshatsaini08/srevox-worker` | `latest` / `v1.0.0` |
+| `akshatsaini08/srevox-ai` | `latest` / `v1.0.0` |
+| `akshatsaini08/srevox-agent` | `latest` / `v1.0.0` |
 
 Use pinned versions in production:
 
 ```yaml
-image: akshatsaini08/loopzen-api:v1.0.0   # recommended for production
-image: akshatsaini08/loopzen-api:latest    # always latest
+image: akshatsaini08/srevox-api:v1.0.0   # recommended for production
+image: akshatsaini08/srevox-api:latest    # always latest
 ```
 
 ---
@@ -246,9 +246,9 @@ image: akshatsaini08/loopzen-api:latest    # always latest
 ### Network requirements
 
 ```
-K8s nodes     ──(outbound TCP 6379)──▶  Loopzen Redis host
-Your browser  ──(TCP 3000 / 4000)────▶  Loopzen host
-Loopzen host  ──(TCP 443, optional)──▶  OpenAI / Anthropic
+K8s nodes     ──(outbound TCP 6379)──▶  Srevox Redis host
+Your browser  ──(TCP 3000 / 4000)────▶  Srevox host
+Srevox host  ──(TCP 443, optional)──▶  OpenAI / Anthropic
                                         (skip — use Ollama for air-gapped)
 ```
 
@@ -315,7 +315,7 @@ Email alerts work with any internal SMTP relay — no internet required.
 
 | Variable | Description |
 |---|---|
-| `REDIS_URL` | Loopzen Redis URL from inside the cluster |
+| `REDIS_URL` | Srevox Redis URL from inside the cluster |
 | `CLUSTER_ID` | UUID from Dashboard → Clusters → Add |
 | `CLUSTER_NAME` | Friendly name for this cluster |
 | `WATCH_NAMESPACES` | Comma-separated namespaces (empty = all) |
@@ -352,7 +352,7 @@ to           →  whatsapp:+91XXXXXXXXXX
 ```
 
 ### Generic Webhook
-Loopzen POSTs this JSON to any HTTP endpoint:
+Srevox POSTs this JSON to any HTTP endpoint:
 ```json
 {
   "pod_name": "payment-svc-abc",
@@ -371,14 +371,14 @@ Loopzen POSTs this JSON to any HTTP endpoint:
 
 ### Verify alert worker is connected
 ```bash
-redis-cli -h YOUR_REDIS_IP -p 6379 PUBSUB NUMSUB loopzen:crashes
+redis-cli -h YOUR_REDIS_IP -p 6379 PUBSUB NUMSUB srevox:crashes
 # (integer) 1  ← worker connected
 # (integer) 0  ← worker not connected, check REDIS_URL
 ```
 
 ### Send a test crash event
 ```bash
-redis-cli -h YOUR_REDIS_IP -p 6379 PUBLISH loopzen:crashes '{
+redis-cli -h YOUR_REDIS_IP -p 6379 PUBLISH srevox:crashes '{
   "cluster_id":     "YOUR_CLUSTER_UUID",
   "pod_name":       "test-pod",
   "namespace":      "default",
@@ -448,7 +448,7 @@ kubectl delete pod crash-test oom-test
 
 ## 📄 License
 
-Loopzen is **source-available**. You may self-host it for personal or internal company use. Commercial redistribution, reselling, or offering it as a managed service requires a commercial license.
+Srevox is **source-available**. You may self-host it for personal or internal company use. Commercial redistribution, reselling, or offering it as a managed service requires a commercial license.
 
 See [LICENSE](LICENSE) for full terms.
 
@@ -462,10 +462,10 @@ See [LICENSE](LICENSE) for full terms.
 
 <br/>
 
-⚡ **Loopzen** — Stay calm when your pods don't.
+⚡ **Srevox** — Stay calm when your pods don't.
 
 <br/>
 
-[🐳 Docker Hub](https://hub.docker.com/u/akshatsaini08) &nbsp;·&nbsp; [🐛 Issues](https://github.com/Akshatsainiaks/loopzen/issues)
+[🐳 Docker Hub](https://hub.docker.com/u/akshatsaini08) &nbsp;·&nbsp; [🐛 Issues](https://github.com/Akshatsainiaks/srevox/issues)
 
 </div>

@@ -1,4 +1,4 @@
--- Loopzen Database Schema
+-- Srevox Database Schema
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE organizations (

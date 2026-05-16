@@ -7,7 +7,7 @@ import { getUser, removeToken } from "@/lib/auth";
 import { apiLogout } from "@/lib/api";
 import { useTheme } from "./ThemeProvider";
 import { useToast } from "./Toast";
-import { LoopzenWordmark } from "./Logo";
+import { SrevoxWordmark } from "./Logo";
 
 const ROLE_ICONS: Record<string,React.ElementType> = { admin: Crown, member: Shield, viewer: Eye };
 const ROLE_COLORS: Record<string,string> = {
@@ -112,7 +112,7 @@ export default function Navbar() {
 
   return (
     <header className="h-14 bg-white dark:bg-[#151823] border-b border-gray-100 dark:border-slate-800 flex items-center px-5 sticky top-0 z-30 w-full">
-      <Link href="/dashboard" className="mr-auto"><LoopzenWordmark size="md" /></Link>
+      <Link href="/dashboard" className="mr-auto"><SrevoxWordmark size="md" /></Link>
 
       <div className="flex items-center gap-1">
         {/* Bell */}

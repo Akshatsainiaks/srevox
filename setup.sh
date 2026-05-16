@@ -8,10 +8,10 @@ YELLOW="\033[33m"
 RED="\033[31m"
 RESET="\033[0m"
 
-BASE="https://raw.githubusercontent.com/Akshatsainiaks/loopzen/main"
+BASE="https://raw.githubusercontent.com/Akshatsainiaks/srevox/main"
 
 echo ""
-echo -e "${CYAN}${BOLD}⚡ Loopzen — Self-Hosted Setup${RESET}"
+echo -e "${CYAN}${BOLD}⚡ Srevox — Self-Hosted Setup${RESET}"
 echo -e "${CYAN}   Kubernetes Pod Crash Alerting${RESET}"
 echo ""
 
@@ -27,9 +27,9 @@ fi
 echo -e "${GREEN}✓ Docker found${RESET}"
 
 # ── Create folder structure ───────────────────────────────────
-mkdir -p loopzen/infra/docker/postgres
-cd loopzen
-echo -e "${GREEN}✓ Created loopzen/ directory${RESET}"
+mkdir -p srevox/infra/docker/postgres
+cd srevox
+echo -e "${GREEN}✓ Created srevox/ directory${RESET}"
 
 # ── Download all required files ───────────────────────────────
 echo -e "${CYAN}→ Downloading files...${RESET}"
@@ -59,19 +59,19 @@ else
 fi
 
 # ── Pull all images ───────────────────────────────────────────
-echo -e "${CYAN}→ Pulling Loopzen images from Docker Hub...${RESET}"
+echo -e "${CYAN}→ Pulling Srevox images from Docker Hub...${RESET}"
 docker compose pull
 echo -e "${GREEN}✓ All images pulled${RESET}"
 
 echo ""
-echo -e "${GREEN}${BOLD}✅ Loopzen is ready!${RESET}"
+echo -e "${GREEN}${BOLD}✅ Srevox is ready!${RESET}"
 echo ""
 echo -e "   1. Edit .env:          ${BOLD}nano .env${RESET}"
-echo -e "   2. Start Loopzen:      ${BOLD}docker compose up -d${RESET}"
+echo -e "   2. Start Srevox:      ${BOLD}docker compose up -d${RESET}"
 echo ""
 echo -e "   Dashboard:  ${CYAN}http://YOUR_SERVER_IP:3000${RESET}"
 echo -e "   API:        ${CYAN}http://YOUR_SERVER_IP:4000${RESET}"
-echo -e "   Login:      ${CYAN}admin@loopzen.local / admin123${RESET}"
+echo -e "   Login:      ${CYAN}admin@srevox.local / admin123${RESET}"
 echo ""
 echo -e "   ${YELLOW}⚠️  Change default password after first login!${RESET}"
 echo ""

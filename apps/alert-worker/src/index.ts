@@ -1,5 +1,5 @@
 /**
- * Loopzen Alert Worker v2
+ * Srevox Alert Worker v2
  * Pipeline: Redis crash event → rule match → noise filter →
  *           service owner routing → user preference filter → send alerts
  */
@@ -14,8 +14,8 @@ import { sendTeams, sendWhatsApp, sendWebhook } from "./senders/channels.js";
 const db = new Pool({
   host:     process.env.POSTGRES_HOST || "localhost",
   port:     Number(process.env.POSTGRES_PORT || 5432),
-  database: process.env.POSTGRES_DB   || "loopzen",
-  user:     process.env.POSTGRES_USER || "loopzen",
+  database: process.env.POSTGRES_DB   || "srevox",
+  user:     process.env.POSTGRES_USER || "srevox",
   password: process.env.POSTGRES_PASSWORD,
 });
 
@@ -33,7 +33,7 @@ server.post("/test", async (req, reply) => {
   };
   const testEvent: CrashEvent = {
     cluster_id:     "test-cluster",
-    pod_name:       test_message.pod_name    || "test-pod-loopzen",
+    pod_name:       test_message.pod_name    || "test-pod-srevox",
     namespace:      test_message.namespace   || "production",
     container_name: test_message.container_name || "app",
     crash_reason:   test_message.crash_reason   || "OOMKilled",
@@ -53,11 +53,11 @@ server.post("/test", async (req, reply) => {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log("[alert-worker] 🚀 Starting Loopzen alert worker...");
+  console.log("[alert-worker] 🚀 Starting Srevox alert worker...");
   await server.listen({ port: 3001, host: "0.0.0.0" });
   console.log("[alert-worker] Test server on http://localhost:3002");
 
-  await subscriber.subscribe("loopzen:crashes", (err) => {
+  await subscriber.subscribe("srevox:crashes", (err) => {
     if (err) { console.error("[alert-worker] Subscribe error:", err); process.exit(1); }
   });
 
@@ -70,7 +70,7 @@ async function main() {
     }
   });
 
-  console.log("[alert-worker] 👂 Waiting for crash events on loopzen:crashes...");
+  console.log("[alert-worker] 👂 Waiting for crash events on srevox:crashes...");
 }
 
 // ── Event pipeline ────────────────────────────────────────────────────────────

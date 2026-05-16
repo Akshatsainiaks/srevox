@@ -59,7 +59,7 @@ const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Connect your cluster",
-    desc: "Install the lightweight Loopzen agent with one kubectl command. Agent connects outbound only — no inbound firewall rules.",
+    desc: "Install the lightweight Srevox agent with one kubectl command. Agent connects outbound only — no inbound firewall rules.",
     icon: Server,
   },
   {
@@ -139,7 +139,7 @@ const TESTIMONIALS = [
   {
     name: "Rahul Sharma",
     role: "Platform Engineer @ TechCorp",
-    text: "Loopzen caught a CrashLoopBackOff in our payment service at 3am. The WhatsApp alert woke me up before any customer noticed. Game changer.",
+    text: "Srevox caught a CrashLoopBackOff in our payment service at 3am. The WhatsApp alert woke me up before any customer noticed. Game changer.",
     stars: 5,
   },
   {
@@ -194,7 +194,7 @@ export default function LandingPage() {
               <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
                 <Radio className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-gray-900 text-lg">Loopzen</span>
+              <span className="font-bold text-gray-900 text-lg">Srevox</span>
             </Link>
 
             {/* Desktop nav */}
@@ -249,7 +249,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Loopzen watches your Kubernetes pods 24/7 and instantly alerts you on Email, Teams, or WhatsApp
+            Srevox watches your Kubernetes pods 24/7 and instantly alerts you on Email, Teams, or WhatsApp
             when crash loops happen — so you don't have to constantly check dashboards.
           </p>
 
@@ -287,7 +287,7 @@ export default function LandingPage() {
               <div className="w-3 h-3 rounded-full bg-red-400" />
               <div className="w-3 h-3 rounded-full bg-amber-400" />
               <div className="w-3 h-3 rounded-full bg-green-400" />
-              <span className="text-xs text-gray-400 ml-2">app.loopzen.io/dashboard</span>
+              <span className="text-xs text-gray-400 ml-2">app.srevox.io/dashboard</span>
             </div>
             <div className="p-6 grid grid-cols-4 gap-4">
               {[
@@ -422,7 +422,7 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <div className="p-3 bg-gray-50 text-center text-xs text-gray-400 border-t">
-                  Loopzen — Stay calm. We'll catch the crash loops.
+                  Srevox — Stay calm. We'll catch the crash loops.
                 </div>
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link
-                  href={plan.name === "Enterprise" ? "mailto:hello@loopzen.io" : "/signup"}
+                  href={plan.name === "Enterprise" ? "mailto:hello@srevox.io" : "/signup"}
                   className={`text-center py-2.5 rounded-xl font-medium text-sm transition-colors ${
                     plan.highlighted
                       ? "bg-indigo-600 text-white hover:bg-indigo-700"
@@ -513,14 +513,14 @@ export default function LandingPage() {
           <h2 className="text-4xl font-bold text-gray-900 mb-6">Built by engineers, for engineers</h2>
           <p className="text-lg text-gray-600 leading-relaxed mb-8">
             We've been on-call. We know the anxiety of watching dashboards at 2am, wondering if something
-            is about to break. Loopzen was built to eliminate that anxiety — not by adding another dashboard,
+            is about to break. Srevox was built to eliminate that anxiety — not by adding another dashboard,
             but by making sure the right person gets notified, immediately, where they already are.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left mt-12">
             {[
               { title: "The problem", desc: "Teams miss pod crashes because alerts go to email inboxes nobody checks, or dashboards require constant babysitting.", icon: "😰" },
-              { title: "Our solution", desc: "Loopzen watches 24/7 using the K8s Watch API and sends instant alerts to where your team already works.", icon: "🎯" },
-              { title: "The result", desc: "Faster incident response, less stress, and the confidence to close your laptop knowing Loopzen is watching.", icon: "🧘" },
+              { title: "Our solution", desc: "Srevox watches 24/7 using the K8s Watch API and sends instant alerts to where your team already works.", icon: "🎯" },
+              { title: "The result", desc: "Faster incident response, less stress, and the confidence to close your laptop knowing Srevox is watching.", icon: "🧘" },
             ].map((item) => (
               <div key={item.title} className="card p-5">
                 <div className="text-3xl mb-3">{item.icon}</div>
@@ -539,10 +539,10 @@ export default function LandingPage() {
             <h2 className="text-4xl font-bold text-gray-900">Frequently asked questions</h2>
           </div>
           {[
-            { q: "Does Loopzen need write access to my cluster?", a: "No. Loopzen only uses read-only RBAC permissions — get, list, watch on pods and events. It never modifies your cluster." },
-            { q: "How does the agent connect — do I need to open firewall ports?", a: "No inbound ports needed. The agent connects outbound to Loopzen via a secure WebSocket. Your cluster's firewall stays unchanged." },
-            { q: "Can I self-host Loopzen?", a: "Yes. We provide a Docker image and Helm chart for full self-hosted deployment. Everything runs inside your infrastructure, including the AI service using local Ollama." },
-            { q: "What AI provider does Loopzen use for diagnosis?", a: "You choose: OpenAI (GPT-4o-mini), Anthropic (Claude Haiku), or a local Ollama model for air-gapped environments. AI diagnosis is on-demand only — never automatic." },
+            { q: "Does Srevox need write access to my cluster?", a: "No. Srevox only uses read-only RBAC permissions — get, list, watch on pods and events. It never modifies your cluster." },
+            { q: "How does the agent connect — do I need to open firewall ports?", a: "No inbound ports needed. The agent connects outbound to Srevox via a secure WebSocket. Your cluster's firewall stays unchanged." },
+            { q: "Can I self-host Srevox?", a: "Yes. We provide a Docker image and Helm chart for full self-hosted deployment. Everything runs inside your infrastructure, including the AI service using local Ollama." },
+            { q: "What AI provider does Srevox use for diagnosis?", a: "You choose: OpenAI (GPT-4o-mini), Anthropic (Claude Haiku), or a local Ollama model for air-gapped environments. AI diagnosis is on-demand only — never automatic." },
             { q: "How is the noise controlled?", a: "You set minimum restart thresholds (e.g. alert after 3+ restarts) and cooldown periods (e.g. no repeat alert for 15 minutes for the same pod). Namespace filters let you ignore dev/staging." },
           ].map((faq, i) => (
             <div key={i} className="border-b border-gray-100">
@@ -566,7 +566,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-4">Ready to stay zen?</h2>
           <p className="text-indigo-200 text-lg mb-10">
-            Join DevOps teams who sleep better knowing Loopzen is watching their clusters.
+            Join DevOps teams who sleep better knowing Srevox is watching their clusters.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/signup" className="bg-white text-indigo-600 font-bold px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition-colors text-sm">
@@ -590,7 +590,7 @@ export default function LandingPage() {
                 <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center">
                   <Radio className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-bold text-white text-lg">Loopzen</span>
+                <span className="font-bold text-white text-lg">Srevox</span>
               </div>
               <p className="text-sm leading-relaxed">
                 Stay calm. We'll catch the crash loops.
@@ -602,7 +602,7 @@ export default function LandingPage() {
             {/* Links */}
             {[
               { title: "Product", links: [{ l: "Features", h: "#features" }, { l: "How it works", h: "#how-it-works" }, { l: "Pricing", h: "#pricing" }, { l: "Changelog", h: "#" }] },
-              { title: "Company", links: [{ l: "About", h: "#about" }, { l: "Blog", h: "#" }, { l: "Careers", h: "#" }, { l: "Contact", h: "mailto:hello@loopzen.io" }] },
+              { title: "Company", links: [{ l: "About", h: "#about" }, { l: "Blog", h: "#" }, { l: "Careers", h: "#" }, { l: "Contact", h: "mailto:hello@srevox.io" }] },
               { title: "Legal", links: [{ l: "Privacy Policy", h: "#" }, { l: "Terms of Service", h: "#" }, { l: "Security", h: "#" }] },
             ].map((col) => (
               <div key={col.title}>
@@ -618,7 +618,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-            <span>© 2026 Loopzen. All rights reserved.</span>
+            <span>© 2026 Srevox. All rights reserved.</span>
             <span>Built with ❤️ for DevOps teams</span>
           </div>
         </div>

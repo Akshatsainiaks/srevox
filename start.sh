@@ -1,8 +1,8 @@
 #!/bin/bash
-# Loopzen Quick Start Script
+# Srevox Quick Start Script
 # Run: chmod +x start.sh && ./start.sh
 
-echo "🔭 Starting Loopzen..."
+echo "🔭 Starting Srevox..."
 
 # Check .env exists
 if [ ! -f .env ]; then
@@ -29,4 +29,4 @@ echo "Tab 4 — Frontend (Next.js):"
 echo "  cd apps/frontend && npm install && npm run dev"
 echo ""
 echo "Then open: http://localhost:3000"
-echo "Login: admin@loopzen.local / admin123"
+echo "Login: admin@srevox.local / admin123"

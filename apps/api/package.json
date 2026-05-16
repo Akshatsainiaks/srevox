@@ -1,7 +1,7 @@
 {
-  "name": "loopzen-api",
+  "name": "srevox-api",
   "version": "1.0.0",
-  "description": "Loopzen main API — Node.js + Fastify + PostgreSQL + Redis",
+  "description": "Srevox main API — Node.js + Fastify + PostgreSQL + Redis",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

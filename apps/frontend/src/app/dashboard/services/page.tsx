@@ -197,7 +197,7 @@ export default function ServicesPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-indigo-700">
           {[
             { step: "1", title: "Pod crashes",        desc: "auth-java-7d9f pod crashes in production namespace" },
-            { step: "2", title: "Owner matched",      desc: "Loopzen finds Rahul owns pod_prefix: auth-java in production" },
+            { step: "2", title: "Owner matched",      desc: "Srevox finds Rahul owns pod_prefix: auth-java in production" },
             { step: "3", title: "Routed alert sent",  desc: "Alert goes to Rahul's personal channel + org admins + rule channels" },
           ].map((s) => (
             <div key={s.step} className="flex gap-2">

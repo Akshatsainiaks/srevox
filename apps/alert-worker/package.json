@@ -1,7 +1,7 @@
 {
-  "name": "loopzen-alert-worker",
+  "name": "srevox-alert-worker",
   "version": "1.0.0",
-  "description": "Loopzen alert delivery — Email, Teams, WhatsApp, Webhook",
+  "description": "Srevox alert delivery — Email, Teams, WhatsApp, Webhook",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

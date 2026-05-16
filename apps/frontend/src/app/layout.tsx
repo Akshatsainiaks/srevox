@@ -5,7 +5,7 @@ import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmModal";
 
 export const metadata: Metadata = {
-  title: "Loopzen — Stay calm. We'll catch the crash loops.",
+  title: "Srevox — Stay calm. We'll catch the crash loops.",
   description: "Kubernetes pod crash alerting with AI diagnostics.",
 };
 
