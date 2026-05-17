@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { randomUUID } from "crypto";
+import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
 import { encrypt, decrypt } from "../services/crypto.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
@@ -28,7 +28,7 @@ export default async function channelRoutes(app: FastifyInstance) {
     if (!name || !type || !config)
       return reply.status(400).send({ detail: "name, type and config required" });
 
-    const id = randomUUID();
+    const id = genId("chn");
     await sql`
       INSERT INTO channels (id, org_id, name, type, config_encrypted)
       VALUES (${id}, ${org_id}, ${name}, ${type}, ${encrypt(JSON.stringify(config))})

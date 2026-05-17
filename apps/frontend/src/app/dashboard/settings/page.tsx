@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { User, Key, Server, Bell, CheckCircle, Loader2, Trash2, Plus, Palette, Sun, Moon, Monitor } from "lucide-react";
+import { User, Key, Server, Bell, CheckCircle, Loader2, Trash2, Plus, Palette, Sun, Moon, Monitor, Zap } from "lucide-react";
 import { apiUpdateMe, apiGetMe } from "@/lib/api";
 import { getUser, setUser } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -46,8 +46,53 @@ export default function SettingsPage() {
   const localUser = getUser();
   const { theme, setTheme } = useTheme();
 
+
+  // AI Settings
+  const [aiProvider, setAiProvider] = useState("groq");
+  const [aiModel,    setAiModel]    = useState("llama-3.1-8b-instant");
+  const [aiApiKey,   setAiApiKey]   = useState("");
+  const [ollamaUrl,  setOllamaUrl]  = useState("http://localhost:11434");
+  const [aiSaving,   setAiSaving]   = useState(false);
+  const [aiSaved,    setAiSaved]    = useState(false);
+  const [hasApiKey,  setHasApiKey]  = useState(false);
+  const [editingKey, setEditingKey] = useState(false);
+
+  const AI_PROVIDERS = [
+    { value: "groq",      label: "Groq",      desc: "Free, fast inference",     models: ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "mixtral-8x7b-32768"] },
+    { value: "openai",    label: "OpenAI",    desc: "GPT-4o, GPT-4o-mini",      models: ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"] },
+    { value: "anthropic", label: "Anthropic", desc: "Claude models",            models: ["claude-haiku-4-5-20251001", "claude-sonnet-4-5", "claude-opus-4"] },
+    { value: "ollama",    label: "Ollama",    desc: "Local / air-gapped",       models: ["llama3", "llama3.2:1b", "tinyllama", "mistral"] },
+  ];
+
+  useEffect(() => {
+    api.get("/api/ai-settings").then(r => {
+      setAiProvider(r.data.provider || "groq");
+      setAiModel(r.data.model || "llama-3.1-8b-instant");
+      setHasApiKey(r.data.api_key === "••••••••");
+      setAiApiKey("");
+      setOllamaUrl(r.data.ollama_url || "http://localhost:11434");
+    }).catch(() => {});
+  }, []);
+
+  const saveAiSettings = async () => {
+    setAiSaving(true);
+    try {
+      await api.post("/api/ai-settings", {
+        provider: aiProvider,
+        model: aiModel,
+        api_key: aiApiKey,
+        ollama_url: ollamaUrl,
+      });
+      if (aiApiKey) { setHasApiKey(true); setAiApiKey(""); setEditingKey(false); }
+      setAiSaved(true);
+      setTimeout(() => setAiSaved(false), 3000);
+    } catch {}
+    setAiSaving(false);
+  };
+
   const [fullName,   setFullName]   = useState(localUser?.full_name || "");
   const [orgName,    setOrgName]    = useState("");
+  const [initialOrgName, setInitialOrgName] = useState("");
   const [orgPlan,    setOrgPlan]    = useState("");
   const [curPass,    setCurPass]    = useState("");
   const [newPass,    setNewPass]    = useState("");
@@ -63,6 +108,7 @@ export default function SettingsPage() {
     apiGetMe().then((data) => {
       setFullName(data.full_name || "");
       setOrgName(data.org?.name || "");
+      setInitialOrgName(data.org?.name || "");
       setOrgPlan(data.org?.plan || "free");
     }).catch(console.error);
 
@@ -80,6 +126,18 @@ export default function SettingsPage() {
       if (localUser) setUser({ ...localUser, full_name: fullName });
       setSaved("profile"); setTimeout(() => setSaved(""), 3000);
     } catch { setError("Failed to save profile"); }
+    finally { setSaving(false); }
+  };
+
+  const saveOrg = async () => {
+    setSaving(true); setError(""); setSaved("");
+    try {
+      await apiUpdateMe({ org_name: orgName });
+      setInitialOrgName(orgName);
+      setSaved("org"); setTimeout(() => setSaved(""), 3000);
+    } catch (err: any) { 
+      setError(err?.response?.data?.detail || "Failed to save organization"); 
+    }
     finally { setSaving(false); }
   };
 
@@ -120,7 +178,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage your account and personal preferences</p>
@@ -131,14 +189,22 @@ export default function SettingsPage() {
       )}
 
       {/* Organization */}
-      {orgName && (
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-3">
+      {orgName !== undefined && (
+        <div className="card p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
             <Server className="w-4 h-4 text-indigo-500" />
             <h2 className="font-bold text-gray-800 dark:text-white">Organization</h2>
-            <span className="badge bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-500/20 text-xs capitalize ml-auto">{orgPlan} plan</span>
+            {orgPlan && <span className="badge bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-500/20 text-xs capitalize ml-auto">{orgPlan} plan</span>}
           </div>
-          <div className="text-sm text-gray-700 dark:text-slate-300 font-medium">{orgName}</div>
+          <div>
+            <label className="label">Organization name</label>
+            <input className="input" value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Your organization" />
+          </div>
+          <button onClick={saveOrg} disabled={saving || !orgName || orgName === initialOrgName} className="btn-primary">
+            {saved === "org" ? <><CheckCircle className="w-4 h-4" /> Saved!</>
+              : saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+              : "Save organization"}
+          </button>
         </div>
       )}
 
@@ -304,21 +370,111 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Platform info */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Server className="w-4 h-4 text-indigo-500" />
-          <h2 className="font-bold text-gray-800 dark:text-white">Platform info</h2>
-        </div>
-        <dl className="space-y-3 text-sm">
-          {[["Platform","Srevox v1.0.0"],["API","Node.js + Fastify"],["AI service","Python + FastAPI"],["K8s watcher","Go"],["Alert worker","Node.js"],["Database","PostgreSQL 16"],["Cache/Queue","Redis 7"]].map(([k, v]) => (
-            <div key={k} className="flex justify-between border-b border-gray-50 dark:border-slate-800 pb-3 last:border-0 last:pb-0">
-              <dt className="text-gray-500 dark:text-slate-400">{k}</dt>
-              <dd className="font-medium text-gray-800 dark:text-slate-200">{v}</dd>
+                {/* ── AI Diagnosis Settings ─────────────────────────── */}
+        <section className="card p-6 space-y-5">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-slate-800">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             </div>
-          ))}
-        </dl>
-      </div>
+            <div>
+              <h2 className="font-bold text-gray-900 dark:text-white text-sm">AI Diagnosis</h2>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Configure AI provider for pod crash diagnosis</p>
+            </div>
+          </div>
+
+          {/* Provider selection */}
+          <div>
+            <label className="label mb-2">AI Provider</label>
+            <div className="grid grid-cols-2 gap-2">
+              {AI_PROVIDERS.map(p => (
+                <button key={p.value} onClick={() => { setAiProvider(p.value); setAiModel(p.models[0]); }}
+                  className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                    aiProvider === p.value
+                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
+                      : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600"
+                  }`}>
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${aiProvider === p.value ? "bg-indigo-500" : "bg-gray-300 dark:bg-slate-600"}`} />
+                  <div>
+                    <div className={`text-sm font-semibold ${aiProvider === p.value ? "text-indigo-700 dark:text-indigo-400" : "text-gray-800 dark:text-slate-200"}`}>{p.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-0.5">{p.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Model selection */}
+          <div>
+            <label className="label">Model</label>
+            <select className="input mt-1" value={aiModel} onChange={e => setAiModel(e.target.value)}>
+              {AI_PROVIDERS.find(p => p.value === aiProvider)?.models.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* API Key — not shown for ollama */}
+          {aiProvider !== "ollama" && (
+            <div>
+              <label className="label">API Key</label>
+              {hasApiKey && !editingKey ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="input flex-1 flex items-center gap-2 bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    <span className="text-sm text-green-700 dark:text-green-400">API key saved</span>
+                    <span className="text-xs text-green-500 ml-auto font-mono">sk-••••••••••••</span>
+                  </div>
+                  <button onClick={() => setEditingKey(true)}
+                    className="px-3 py-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors">
+                    Edit
+                  </button>
+                  <button onClick={async () => {
+                    await api.post("/api/ai-settings", { provider: aiProvider, model: aiModel, api_key: "REMOVE", ollama_url: ollamaUrl });
+                    setHasApiKey(false);
+                    setAiApiKey("");
+                  }}
+                    className="px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-1">
+                  <div className="flex gap-2">
+                    <input type="password" className="input flex-1" placeholder="sk-••••••••••••••••••••••"
+                      value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} autoFocus={editingKey} />
+                    {editingKey && (
+                      <button onClick={() => { setEditingKey(false); setAiApiKey(""); }}
+                        className="px-3 py-2 text-xs font-medium text-gray-500 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                    {aiProvider === "groq" && <span>Get free key at <a href="https://console.groq.com" target="_blank" className="text-indigo-500 hover:underline">console.groq.com</a></span>}
+                    {aiProvider === "openai" && <span>Get key at <a href="https://platform.openai.com" target="_blank" className="text-indigo-500 hover:underline">platform.openai.com</a></span>}
+                    {aiProvider === "anthropic" && <span>Get key at <a href="https://console.anthropic.com" target="_blank" className="text-indigo-500 hover:underline">console.anthropic.com</a></span>}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Ollama URL */}
+          {aiProvider === "ollama" && (
+            <div>
+              <label className="label">Ollama URL</label>
+              <input className="input mt-1" placeholder="http://localhost:11434"
+                value={ollamaUrl} onChange={e => setOllamaUrl(e.target.value)} />
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">URL of your local Ollama instance</p>
+            </div>
+          )}
+
+          <button onClick={saveAiSettings} disabled={aiSaving}
+            className="btn-primary flex items-center gap-2">
+            {aiSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : aiSaved ? <CheckCircle className="w-4 h-4" /> : <Key className="w-4 h-4" />}
+            {aiSaving ? "Saving..." : aiSaved ? "Saved!" : "Save AI settings"}
+          </button>
+        </section>
     </div>
   );
-}
+}// AI Settings added via separate component

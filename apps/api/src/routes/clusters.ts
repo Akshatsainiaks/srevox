@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { randomUUID } from "crypto";
+import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
 import { invalidateCache } from "../db/redis.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
@@ -38,8 +38,8 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { name, connection_type, kubeconfig, api_server_url, cloud_provider, k8s_version } =
       req.body as any;
 
-    const id          = randomUUID();
-    const agent_token = connection_type === "agent" ? randomUUID() : null;
+    const id          = genId("cls");
+    const agent_token = connection_type === "agent" ? genId("agt") : null;
 
     await sql`
       INSERT INTO clusters

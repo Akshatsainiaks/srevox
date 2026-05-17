@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import sql from "../db/sql.js";
 import { getUser } from "../middleware/rbac.js";
+import { genId } from "../utils/id.js";
 
 export default async function resourceAlertRoutes(app: FastifyInstance) {
   app.get("/", { onRequest: [(app as any).authenticate] }, async (req) => {
@@ -15,9 +16,10 @@ export default async function resourceAlertRoutes(app: FastifyInstance) {
   app.post("/", { onRequest: [(app as any).authenticate] }, async (req) => {
     const { org_id } = getUser(req);
     const { cluster_id, resource_type, threshold_pct, target, target_name, severity } = req.body as any;
+    const id = genId("ral");
     const [alert] = await sql`
-      INSERT INTO resource_alerts (org_id, cluster_id, resource_type, threshold_pct, target, target_name, severity)
-      VALUES (${org_id}, ${cluster_id}, ${resource_type}, ${threshold_pct}, ${target}, ${target_name||null}, ${severity})
+      INSERT INTO resource_alerts (id, org_id, cluster_id, resource_type, threshold_pct, target, target_name, severity)
+      VALUES (${id}, ${org_id}, ${cluster_id}, ${resource_type}, ${threshold_pct}, ${target}, ${target_name||null}, ${severity})
       RETURNING *
     `;
     return { alert };

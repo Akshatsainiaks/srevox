@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/loopzen/watcher/internal/publisher"
+	"github.com/srevox/watcher/internal/publisher"
 )
 
 // CrashEvent is published to Redis

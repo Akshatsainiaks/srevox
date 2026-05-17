@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
-import { randomUUID } from "crypto";
+import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
 import { setSession, deleteSession } from "../db/redis.js";
 import { encrypt } from "../services/crypto.js";
@@ -21,12 +21,12 @@ export default async function authRoutes(app: FastifyInstance) {
     const [existing] = await sql`SELECT id FROM users WHERE email = ${email}`;
     if (existing) return reply.status(409).send({ detail: "Email already registered" });
 
-    const userId = randomUUID();
-    const orgId  = randomUUID();
+    const userId = genId("usr");
+    const orgId  = genId("org");
     const slug   = (org_name || email.split("@")[0]).toLowerCase().replace(/\s+/g, "-") + "-" + orgId.slice(0, 6);
     const hashed = await bcrypt.hash(password, 12);
 
-    await sql.begin(async (tx) => {
+    await sql.begin(async (tx: any) => {
       await tx`
         INSERT INTO organizations (id, name, slug, plan)
         VALUES (${orgId}, ${org_name || "My Organization"}, ${slug}, 'free')
@@ -107,11 +107,12 @@ export default async function authRoutes(app: FastifyInstance) {
   // PATCH /api/auth/me — update profile + personal channel
   app.patch("/me", { onRequest: [(app as any).authenticate] }, async (req, reply) => {
     const payload = req.user as { sub: string; org_id: string };
-    const { full_name, current_password, new_password, personal_channel } = req.body as {
+    const { full_name, current_password, new_password, personal_channel, org_name } = req.body as {
       full_name?:         string;
       current_password?:  string;
       new_password?:      string;
       personal_channel?:  { type: string; config: Record<string, string>; name: string };
+      org_name?:          string;
     };
 
     if (new_password) {
@@ -130,9 +131,31 @@ export default async function authRoutes(app: FastifyInstance) {
       await sql`UPDATE users SET full_name = ${full_name} WHERE id = ${payload.sub}`;
     }
 
+    if (org_name !== undefined) {
+      const [org] = await sql`SELECT name FROM organizations WHERE id = ${payload.org_id}`;
+      if (org && org.name !== org_name) {
+        const [{ count }] = await sql`
+          SELECT count(*) FROM activity_log 
+          WHERE org_id = ${payload.org_id} 
+            AND action = 'org_name_change' 
+            AND created_at > now() - interval '1 month'
+        `;
+        if (Number(count) >= 2) {
+          return reply.status(429).send({ detail: "Organization name can only be changed 2 times per month" });
+        }
+
+        await sql`UPDATE organizations SET name = ${org_name} WHERE id = ${payload.org_id}`;
+        
+        await sql`
+          INSERT INTO activity_log (org_id, user_id, action, metadata)
+          VALUES (${payload.org_id}, ${payload.sub}, 'org_name_change', ${JSON.stringify({ old: org.name, new: org_name })})
+        `;
+      }
+    }
+
     // Save personal alert channel
     if (personal_channel) {
-      const channelId = randomUUID();
+      const channelId = genId("chn");
       const configEncrypted = encrypt(JSON.stringify(personal_channel.config));
 
       // Delete old personal channel if exists

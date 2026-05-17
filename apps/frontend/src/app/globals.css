@@ -157,3 +157,24 @@ html.dark {
 body:has(#landing-root) {
   background: white !important;
 }
+
+/* Docs page theme — applied before JS via layout.tsx script */
+.docs-root { background: #ffffff; color: #111827; }
+.docs-root[data-theme="dark"] { background: #0d0f17; color: #f1f5f9; }
+.docs-root[data-theme="dark"] nav.docs-nav { background: #101218; border-color: #1e293b; }
+.docs-root[data-theme="dark"] aside.docs-sidebar { background: #101218; border-color: #1e293b; }
+.docs-root nav.docs-nav { background: #ffffff; border-color: #e5e7eb; }
+.docs-root aside.docs-sidebar { background: #f9fafb; border-color: #e5e7eb; }
+
+/* Docs theme CSS variables — defaults prevent flash */
+:root {
+  --docs-bg: #0d0f17;
+  --docs-side-bg: #101218;
+  --docs-nav-bg: #101218;
+  --docs-nav-bdr: #1e293b;
+  --docs-txt: #f1f5f9;
+  --docs-muted: #64748b;
+  --docs-bdr: #1e293b;
+  --docs-input-bg: #1e293b;
+  --docs-input-txt: #cbd5e1;
+}

@@ -97,14 +97,14 @@ export default function PreferencesPage() {
   };
 
   if (loading) return (
-    <div className="space-y-4 max-w-2xl animate-pulse">
+    <div className="space-y-4 animate-pulse">
       <div className="h-8 bg-gray-100 dark:bg-slate-800 rounded-xl w-48" />
       {[...Array(4)].map((_, i) => <div key={i} className="h-32 bg-gray-100 dark:bg-slate-800 rounded-2xl" />)}
     </div>
   );
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alert preferences</h1>

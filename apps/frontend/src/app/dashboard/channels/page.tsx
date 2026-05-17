@@ -4,6 +4,7 @@ import { Bell, Plus, Trash2, Mail, MessageSquare, Webhook, Users, CheckCircle, A
 import { fetchChannels, createChannel, deleteChannel, toggleChannel, testChannel } from "@/lib/api";
 import type { Channel } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
+import { getUser } from "@/lib/auth";
 
 type ChannelType = "email" | "teams" | "whatsapp" | "webhook";
 const CHANNEL_ICONS: Record<ChannelType, React.ElementType> = { email: Mail, teams: Users, whatsapp: MessageSquare, webhook: Webhook };
@@ -104,6 +105,7 @@ export default function ChannelsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<Record<string, "ok" | "fail">>({});
+  const me = getUser();
 
   const load = () => { setLoading(true); fetchChannels().then((d) => setChannels(d.channels || [])).catch(console.error).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
@@ -124,7 +126,9 @@ export default function ChannelsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alert channels</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Configure where crash alerts are delivered</p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Add channel</button>
+        {me?.role === "admin" && (
+          <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Add channel</button>
+        )}
       </div>
       {showAdd && <AddModal onClose={() => setShowAdd(false)} onAdded={load} />}
       {loading ? (
@@ -134,7 +138,9 @@ export default function ChannelsPage() {
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><Bell className="w-8 h-8 text-indigo-400" /></div>
           <p className="font-bold text-gray-800 dark:text-white mb-1">No channels configured yet</p>
           <p className="text-sm text-gray-400 dark:text-slate-500 mb-6">Add Email, Teams, WhatsApp or Webhook to start receiving alerts</p>
-          <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Add your first channel</button>
+          {me?.role === "admin" && (
+            <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Add your first channel</button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -158,13 +164,19 @@ export default function ChannelsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button onClick={() => test(ch.id)} disabled={testing === ch.id} className="btn-secondary text-xs py-1.5 px-3">
-                    {testing === ch.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : testRes === "ok" ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : testRes === "fail" ? <AlertCircle className="w-3.5 h-3.5 text-red-500" /> : "Test"}
-                  </button>
-                  <button onClick={() => toggle(ch.id)} className={`relative w-10 rounded-full transition-colors`} style={{ height: "22px", backgroundColor: ch.enabled ? "#6366f1" : "#e5e7eb" }}>
-                    <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" style={{ transform: ch.enabled ? "translateX(20px)" : "translateX(2px)" }} />
-                  </button>
-                  <button onClick={() => remove(ch.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  {["member", "admin"].includes(me?.role || "") && (
+                    <>
+                      <button onClick={() => test(ch.id)} disabled={testing === ch.id} className="btn-secondary text-xs py-1.5 px-3">
+                        {testing === ch.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : testRes === "ok" ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : testRes === "fail" ? <AlertCircle className="w-3.5 h-3.5 text-red-500" /> : "Test"}
+                      </button>
+                      <button onClick={() => toggle(ch.id)} className={`relative w-10 rounded-full transition-colors`} style={{ height: "22px", backgroundColor: ch.enabled ? "#6366f1" : "#e5e7eb" }}>
+                        <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" style={{ transform: ch.enabled ? "translateX(20px)" : "translateX(2px)" }} />
+                      </button>
+                    </>
+                  )}
+                  {me?.role === "admin" && (
+                    <button onClick={() => remove(ch.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  )}
                 </div>
               </div>
             );

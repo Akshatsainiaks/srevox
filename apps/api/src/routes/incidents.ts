@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { randomUUID } from "crypto";
+import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
 import { setCache, getCache } from "../db/redis.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
@@ -106,7 +106,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
   // POST /api/incidents — internal use by alert worker
   app.post("/", async (req) => {
     const body = req.body as any;
-    const id = randomUUID();
+    const id = genId("inc");
     await sql`
       INSERT INTO incidents
         (id, org_id, cluster_id, rule_id, pod_name, namespace, container_name,

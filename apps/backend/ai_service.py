@@ -1,10 +1,11 @@
 """
-Loopzen AI Microservice — Python FastAPI
+Srevox AI Microservice — Python FastAPI
 On-demand pod crash diagnosis using LLM providers.
 Supports: OpenAI, Anthropic, Ollama (local/air-gapped)
 """
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import json
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Loopzen AI Service", version="1.0.0")
+app = FastAPI(title="Srevox AI Service", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,9 +50,9 @@ async def get_db_connection():
     return await asyncpg.connect(
         host=os.getenv("POSTGRES_HOST", "localhost"),
         port=int(os.getenv("POSTGRES_PORT", 5432)),
-        database=os.getenv("POSTGRES_DB", "loopzen"),
-        user=os.getenv("POSTGRES_USER", "loopzen"),
-        password=os.getenv("POSTGRES_PASSWORD", "loopzen_dev"),
+        database=os.getenv("POSTGRES_DB", "srevox"),
+        user=os.getenv("POSTGRES_USER", "srevox"),
+        password=os.getenv("POSTGRES_PASSWORD", "srevox_dev"),
     )
 
 
@@ -98,9 +99,9 @@ async def call_anthropic(prompt: str) -> dict:
 async def call_ollama(prompt: str) -> dict:
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(
-            f"{os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/generate",
+            f"{_ai_config.get('ollama_url') or os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/generate",
             json={
-                "model": "llama3.2",
+                "model": "tinyllama",
                 "prompt": f"{SYSTEM_PROMPT}\n\nIncident:\n{prompt}",
                 "stream": False,
                 "format": "json",
@@ -110,18 +111,73 @@ async def call_ollama(prompt: str) -> dict:
         return json.loads(raw) if isinstance(raw, str) else raw
 
 
+
+async def call_groq(prompt: str) -> dict:
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}"},
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                "response_format": {"type": "json_object"},
+                "temperature": 0.3,
+            },
+        )
+        data = resp.json()
+        return json.loads(data["choices"][0]["message"]["content"])
+
 async def call_ai(prompt: str) -> dict:
-    provider = os.getenv("AI_PROVIDER", "openai").lower()
+    provider = _ai_config.get("provider", os.getenv("AI_PROVIDER", "groq")).lower()
     if provider == "anthropic":
         return await call_anthropic(prompt)
     elif provider == "ollama":
         return await call_ollama(prompt)
+    elif provider == "groq":
+        return await call_groq(prompt)
     else:
         return await call_openai(prompt)
 
 
+
+# Dynamic config — loaded from API/DB
+_ai_config = {
+    "provider": os.getenv("AI_PROVIDER", "groq"),
+    "model": os.getenv("AI_MODEL", "llama-3.1-8b-instant"),
+    "api_key": os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or "",
+    "ollama_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+}
+
+@app.post("/api/config")
+async def update_config(body: dict):
+    global _ai_config
+    _ai_config.update({k: v for k, v in body.items() if v})
+    return {"success": True}
+
+@app.get("/api/config")
+async def get_config():
+    return {"provider": _ai_config["provider"], "model": _ai_config["model"]}
+
+class DiagnoseRequest(BaseModel):
+    provider:   str = ""
+    model:      str = ""
+    api_key:    str = ""
+    ollama_url: str = ""
+
 @app.post("/api/diagnose/{incident_id}")
-async def diagnose_incident(incident_id: str):
+async def diagnose_incident(incident_id: str, config: DiagnoseRequest = None):
+    # Override global config with per-request config
+    if config and config.provider:
+        _ai_config["provider"]   = config.provider
+    if config and config.model:
+        _ai_config["model"]      = config.model
+    if config and config.api_key:
+        _ai_config["api_key"]    = config.api_key
+    if config and config.ollama_url:
+        _ai_config["ollama_url"] = config.ollama_url
     db = await get_db_connection()
     try:
         incident = await db.fetchrow(
@@ -148,7 +204,7 @@ Crash Reason: {incident['crash_reason']}
 Restart Count: {incident['restart_count']}
 Severity: {incident['severity']}
 Exit Code: {incident.get('exit_code', 'unknown')}
-Pod Labels: {json.dumps(dict(incident.get('pod_labels', {}) or {}))}
+Pod Labels: {incident["pod_labels"] or "{}"}
 
 Please diagnose this crash and provide specific fix steps.
 """
@@ -178,6 +234,6 @@ Please diagnose this crash and provide specific fix steps.
 async def health():
     return {
         "status": "ok",
-        "service": "loopzen-ai",
+        "service": "srevox-ai",
         "provider": os.getenv("AI_PROVIDER", "openai"),
     }

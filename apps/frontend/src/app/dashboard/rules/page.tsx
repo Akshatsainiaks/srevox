@@ -4,6 +4,7 @@ import { BookOpen, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { fetchRules, createRule, deleteRule, toggleRule, fetchClusters, fetchChannels } from "@/lib/api";
 import type { AlertRule, Cluster, Channel } from "@/lib/utils";
 import { severityBadge, timeAgo } from "@/lib/utils";
+import { getUser } from "@/lib/auth";
 
 const parseArr = (v: unknown): string[] => typeof v === "string" ? JSON.parse(v) : (Array.isArray(v) ? v : []);
 const DEFAULT_REASONS = ["CrashLoopBackOff", "OOMKilled", "Error", "BackOff", "ImagePullBackOff"];
@@ -91,6 +92,7 @@ export default function RulesPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const me = getUser();
 
   const load = () => {
     setLoading(true);
@@ -111,7 +113,9 @@ export default function RulesPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alert rules</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Define when and how to alert on pod crashes</p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> New rule</button>
+        {me?.role === "admin" && (
+          <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> New rule</button>
+        )}
       </div>
       {showAdd && <AddModal clusters={clusters} channels={channels} onClose={() => setShowAdd(false)} onAdded={load} />}
       {loading ? (
@@ -121,7 +125,9 @@ export default function RulesPage() {
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><BookOpen className="w-8 h-8 text-indigo-400" /></div>
           <p className="font-bold text-gray-800 dark:text-white mb-1">No alert rules yet</p>
           <p className="text-sm text-gray-400 dark:text-slate-500 mb-6">Create a rule to define when Srevox sends alerts</p>
-          <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Create first rule</button>
+          {me?.role === "admin" && (
+            <button onClick={() => setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4" /> Create first rule</button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -149,12 +155,16 @@ export default function RulesPage() {
                       {reasons.map((r: string) => <span key={r} className="badge bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 text-xs">{r}</span>)}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => toggle(rule.id)} className={`transition-colors ${rule.enabled ? "text-indigo-500 hover:text-indigo-700" : "text-gray-300 dark:text-slate-600 hover:text-indigo-400"}`}>
-                      {rule.enabled ? <ToggleRight className="w-7 h-7" /> : <ToggleLeft className="w-7 h-7" />}
-                    </button>
-                    <button onClick={() => remove(rule.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                  </div>
+                  {["admin", "member"].includes(me?.role || "viewer") && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => toggle(rule.id)} className={`transition-colors ${rule.enabled ? "text-indigo-500 hover:text-indigo-700" : "text-gray-300 dark:text-slate-600 hover:text-indigo-400"}`}>
+                        {rule.enabled ? <ToggleRight className="w-7 h-7" /> : <ToggleLeft className="w-7 h-7" />}
+                      </button>
+                      {me?.role === "admin" && (
+                        <button onClick={() => remove(rule.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

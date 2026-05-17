@@ -7,6 +7,7 @@ import {
   SlidersHorizontal, ChevronRight, ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getUser } from "@/lib/auth";
 
 const NAV = [
   { href: "/dashboard",             label: "Dashboard",      icon: LayoutDashboard },
@@ -33,7 +34,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       "relative h-full bg-white dark:bg-[#0d0f17]",
       "border-r border-gray-100 dark:border-slate-800/80",
       "flex flex-col shrink-0",
-      "transition-all duration-300 ease-in-out",
+      "transition-[width] duration-300 ease-in-out",
       collapsed ? "w-[64px]" : "w-[220px]"
     )}>
 
@@ -42,7 +43,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         "flex-1 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden",
         collapsed ? "px-2" : "px-3"
       )}>
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.filter(item => {
+          if (item.href === "/dashboard/team") {
+            const user = getUser();
+            return user?.role === "admin" || user?.role === "member";
+          }
+          return true;
+        }).map(({ href, label, icon: Icon }) => {
           const active = href === "/dashboard"
             ? path === "/dashboard"
             : path.startsWith(href);

@@ -8,3 +8,6 @@ __pycache__/
 *.env
 .DS_Store
 *.bak
+.DS_Store
+**/.DS_Store
+*.bak

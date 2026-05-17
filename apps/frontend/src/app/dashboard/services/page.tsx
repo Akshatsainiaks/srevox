@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Users, Plus, Trash2, Loader2, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { timeAgo } from "@/lib/utils";
+import { getUser } from "@/lib/auth";
 
 interface ServiceOwner {
   id: string; cluster_id: string; cluster_name: string;
@@ -144,20 +145,23 @@ export default function ServicesPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [showAdd,  setShowAdd]  = useState(false);
+  const me = getUser();
 
   const load = async () => {
     setLoading(true);
     try {
-      const [so, u, c, ch] = await Promise.all([
+      const [so, c, ch] = await Promise.all([
         api.get("/api/service-owners"),
-        api.get("/api/users"),
         api.get("/api/clusters"),
         api.get("/api/channels"),
       ]);
       setOwners(so.data.service_owners   || []);
-      setUsers(u.data.users              || []);
       setClusters(c.data.clusters        || []);
       setChannels(ch.data.channels       || []);
+
+      if (me?.role === "admin") {
+        api.get("/api/users").then(u => setUsers(u.data.users || [])).catch(console.error);
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -171,17 +175,19 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Service owners</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Service owners</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             Route crash alerts to specific team members based on service/namespace
           </p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn-primary">
-          <Plus className="w-4 h-4" /> Assign owner
-        </button>
+        {me?.role === "admin" && (
+          <button onClick={() => setShowAdd(true)} className="btn-primary">
+            <Plus className="w-4 h-4" /> Assign owner
+          </button>
+        )}
       </div>
 
       {showAdd && (
@@ -192,9 +198,9 @@ export default function ServicesPage() {
       )}
 
       {/* How it works */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
-        <h3 className="font-bold text-indigo-900 mb-3 text-sm">How service routing works</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-indigo-700">
+      <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-5">
+        <h3 className="font-bold text-indigo-900 dark:text-indigo-300 mb-3 text-sm">How service routing works</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-indigo-700 dark:text-indigo-400">
           {[
             { step: "1", title: "Pod crashes",        desc: "auth-java-7d9f pod crashes in production namespace" },
             { step: "2", title: "Owner matched",      desc: "Srevox finds Rahul owns pod_prefix: auth-java in production" },
@@ -213,54 +219,56 @@ export default function ServicesPage() {
 
       {/* List */}
       <div className="card overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2">
           <Users className="w-4 h-4 text-indigo-500" />
-          <h2 className="font-semibold text-gray-900">Assignments ({owners.length})</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-white">Assignments ({owners.length})</h2>
         </div>
 
         {loading ? (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-slate-800">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="px-5 py-4 animate-pulse bg-gray-100 dark:bg-slate-800 h-16" />
             ))}
           </div>
         ) : owners.length === 0 ? (
           <div className="py-16 text-center">
-            <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="font-medium text-gray-500">No service owners assigned yet</p>
-            <p className="text-sm text-gray-400 mt-1">Assign owners to route alerts to specific team members</p>
-            <button onClick={() => setShowAdd(true)} className="btn-primary mt-4">
-              <Plus className="w-4 h-4" /> Assign first owner
-            </button>
+            <Users className="w-10 h-10 text-gray-200 dark:text-slate-700 mx-auto mb-3" />
+            <p className="font-medium text-gray-500 dark:text-slate-400">No service owners assigned yet</p>
+            <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">Assign owners to route alerts to specific team members</p>
+            {me?.role === "admin" && (
+              <button onClick={() => setShowAdd(true)} className="btn-primary mt-4">
+                <Plus className="w-4 h-4" /> Assign first owner
+              </button>
+            )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-slate-800">
             {owners.map((owner) => (
               <div key={owner.id} className="px-5 py-4 flex items-start gap-4">
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
                   {(owner.owner_name || owner.owner_email)?.[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-gray-900 text-sm">
+                    <span className="font-semibold text-gray-900 dark:text-white text-sm">
                       {owner.owner_name || owner.owner_email}
                     </span>
-                    <span className="text-gray-400 text-xs">owns</span>
-                    <span className="badge bg-indigo-50 text-indigo-700 border-indigo-100 text-xs">
+                    <span className="text-gray-400 dark:text-slate-500 text-xs">owns</span>
+                    <span className="badge bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-500/20 text-xs">
                       {owner.cluster_name}
                     </span>
                     {owner.namespace && (
-                      <span className="badge bg-amber-50 text-amber-700 border-amber-100 text-xs">
+                      <span className="badge bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20 text-xs">
                         ns: {owner.namespace}
                       </span>
                     )}
                     {owner.pod_prefix && (
-                      <span className="badge bg-green-50 text-green-700 border-green-100 text-xs">
+                      <span className="badge bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-100 dark:border-green-500/20 text-xs">
                         prefix: {owner.pod_prefix}*
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-400 flex gap-3">
+                  <div className="text-xs text-gray-400 dark:text-slate-500 flex gap-3">
                     <span>{owner.owner_email}</span>
                     <span>·</span>
                     <span>Assigned {timeAgo(owner.created_at)}</span>
@@ -269,12 +277,14 @@ export default function ServicesPage() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => remove(owner.id)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {me?.role === "admin" && (
+                  <button
+                    onClick={() => remove(owner.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

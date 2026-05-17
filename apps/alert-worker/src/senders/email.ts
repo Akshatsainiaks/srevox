@@ -75,7 +75,7 @@ export async function sendEmail(
     <!-- Footer -->
     <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
       <p style="margin:0;font-size:12px;color:#94a3b8;">
-        <strong style="color:#6366f1;">Srevox</strong> — Stay calm. We'll catch the crash loops.
+        <strong style="color:#6366f1;">Srevox</strong> — Catch crashes before your users do.
         <br>Incident ID: <code style="font-size:11px;">${incidentId}</code>
       </p>
     </div>

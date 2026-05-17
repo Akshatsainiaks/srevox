@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/loopzen/watcher/internal/k8s"
-	"github.com/loopzen/watcher/internal/publisher"
+	"github.com/srevox/watcher/internal/k8s"
+	"github.com/srevox/watcher/internal/publisher"
 )
 
 func main() {

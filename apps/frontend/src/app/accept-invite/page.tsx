@@ -3,7 +3,9 @@ import { Suspense } from "react";
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Radio, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { CheckCircle, Eye, EyeOff } from "lucide-react";
+import { SrevoxLogo } from "@/components/Logo";
+
 import { api } from "@/lib/api";
 import { setToken, setUser } from "@/lib/auth";
 
@@ -40,7 +42,7 @@ function AcceptInviteForm() {
   };
 
   if (!token) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0d0f17] flex items-center justify-center">
       <div className="text-center">
         <p className="text-red-600 font-medium">Invalid invitation link</p>
         <Link href="/login" className="text-indigo-600 text-sm mt-2 block hover:underline">Go to login</Link>
@@ -49,16 +51,14 @@ function AcceptInviteForm() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-[#0d0f17] dark:to-[#151823] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-              <Radio className="w-7 h-7 text-white" />
-            </div>
+            <SrevoxLogo size={52} />
             <div>
-              <div className="font-bold text-gray-900 text-xl">Srevox</div>
-              <div className="text-sm text-gray-500">You've been invited to join</div>
+              <div className="font-bold text-gray-900 dark:text-white text-xl">Srevox</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">You've been invited to join</div>
             </div>
           </Link>
         </div>
@@ -66,13 +66,13 @@ function AcceptInviteForm() {
         {done ? (
           <div className="card p-8 text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-            <p className="font-bold text-gray-900 text-lg">Welcome to Srevox!</p>
-            <p className="text-sm text-gray-500 mt-1">Redirecting to dashboard...</p>
+            <p className="font-bold text-gray-900 dark:text-white text-lg">Welcome to Srevox!</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Redirecting to dashboard...</p>
           </div>
         ) : (
           <div className="card p-6 shadow-sm">
-            <h1 className="text-lg font-bold text-gray-900 mb-1">Accept invitation</h1>
-            <p className="text-sm text-gray-500 mb-5">Set up your account to get started.</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Accept invitation</h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">Set up your account to get started.</p>
             <div className="space-y-4">
               <div>
                 <label className="label">Full name</label>
@@ -101,7 +101,7 @@ function AcceptInviteForm() {
 
 export default function AcceptInvitePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 dark:bg-[#0d0f17] flex items-center justify-center text-gray-400">Loading...</div>}>
       <AcceptInviteForm />
     </Suspense>
   );

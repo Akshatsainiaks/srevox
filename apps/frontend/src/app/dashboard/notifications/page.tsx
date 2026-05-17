@@ -17,7 +17,7 @@ function timeAgo(iso: string) {
 async function fetchNotifs(readIds: Set<string>): Promise<NotifItem[]> {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL||"http://localhost:4000"}/api/incidents?limit=30`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("lz_token")}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("sv_token")}` },
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -47,7 +47,7 @@ export default function NotificationsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const saved = new Set<string>(JSON.parse(localStorage.getItem("lz_read_notifs")||"[]"));
+    const saved = new Set<string>(JSON.parse(localStorage.getItem("sv_read_notifs")||"[]"));
     setReadIds(saved);
     setNotifs(await fetchNotifs(saved));
     setLoading(false);
@@ -58,14 +58,14 @@ export default function NotificationsPage() {
   const markRead = (id: string) => {
     const next = new Set([...readIds, id]);
     setReadIds(next);
-    localStorage.setItem("lz_read_notifs", JSON.stringify([...next]));
+    localStorage.setItem("sv_read_notifs", JSON.stringify([...next]));
     setNotifs(p => p.map(n => n.id===id ? {...n,read:true} : n));
   };
 
   const markAllRead = () => {
     const next = new Set(notifs.map(n=>n.id));
     setReadIds(next);
-    localStorage.setItem("lz_read_notifs", JSON.stringify([...next]));
+    localStorage.setItem("sv_read_notifs", JSON.stringify([...next]));
     setNotifs(p => p.map(n => ({...n,read:true})));
     success("All caught up!", "All notifications marked as read");
   };
@@ -73,7 +73,7 @@ export default function NotificationsPage() {
   const unread = notifs.filter(n=>!n.read).length;
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>

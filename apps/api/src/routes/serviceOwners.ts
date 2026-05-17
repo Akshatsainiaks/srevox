@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { randomUUID } from "crypto";
+import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
 
@@ -57,7 +57,7 @@ export default async function serviceOwnerRoutes(app: FastifyInstance) {
     const [user] = await sql`SELECT id FROM users WHERE id = ${owner_user_id} AND org_id = ${org_id}`;
     if (!user) return reply.status(404).send({ detail: "User not in your org" });
 
-    const id = randomUUID();
+    const id = genId("sro");
     await sql`
       INSERT INTO service_owners
         (id, org_id, cluster_id, namespace, pod_prefix, owner_user_id, channel_ids)

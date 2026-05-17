@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Bell, LogOut, User, Crown, Shield, Eye, Sun, Moon, ExternalLink, SlidersHorizontal, CheckCheck, AlertTriangle, CheckCircle, Zap } from "lucide-react";
-import { getUser, removeToken } from "@/lib/auth";
+import { getUser, removeToken, AuthUser } from "@/lib/auth";
 import { apiLogout } from "@/lib/api";
 import { useTheme } from "./ThemeProvider";
 import { useToast } from "./Toast";
@@ -32,7 +32,7 @@ function timeAgo(iso: string) {
 async function loadRealNotifications(readIds: Set<string>): Promise<NotifItem[]> {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/incidents?limit=20`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("lz_token")}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("sv_token")}` },
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -58,7 +58,13 @@ async function loadRealNotifications(readIds: Set<string>): Promise<NotifItem[]>
 
 export default function Navbar() {
   const router = useRouter();
-  const user = getUser();
+  const [user, setUserState] = useState<AuthUser | null>(getUser());
+
+  useEffect(() => {
+    const handleUserUpdate = (e: any) => setUserState(e.detail);
+    window.addEventListener("sv_user_updated", handleUserUpdate);
+    return () => window.removeEventListener("sv_user_updated", handleUserUpdate);
+  }, []);
   const { theme, setTheme } = useTheme();
   const { success } = useToast();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -70,7 +76,7 @@ export default function Navbar() {
   const RoleIcon = ROLE_ICONS[user?.role || "viewer"] || Shield;
 
   const loadNotifs = useCallback(async () => {
-    const saved = new Set<string>(JSON.parse(localStorage.getItem("lz_read_notifs") || "[]"));
+    const saved = new Set<string>(JSON.parse(localStorage.getItem("sv_read_notifs") || "[]"));
     setReadIds(saved);
     const items = await loadRealNotifications(saved);
     setNotifs(items);
@@ -90,14 +96,14 @@ export default function Navbar() {
   const markRead = (id: string) => {
     const next = new Set([...readIds, id]);
     setReadIds(next);
-    localStorage.setItem("lz_read_notifs", JSON.stringify([...next]));
+    localStorage.setItem("sv_read_notifs", JSON.stringify([...next]));
     setNotifs(p => p.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   const markAllRead = () => {
     const next = new Set(notifs.map(n => n.id));
     setReadIds(next);
-    localStorage.setItem("lz_read_notifs", JSON.stringify([...next]));
+    localStorage.setItem("sv_read_notifs", JSON.stringify([...next]));
     setNotifs(p => p.map(n => ({ ...n, read: true })));
     success("All caught up!", "All notifications marked as read");
   };

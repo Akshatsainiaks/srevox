@@ -5,7 +5,7 @@ import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmModal";
 
 export const metadata: Metadata = {
-  title: "Srevox — Stay calm. We'll catch the crash loops.",
+  title: "Srevox — Catch crashes before your users do.",
   description: "Kubernetes pod crash alerting with AI diagnostics.",
 };
 
@@ -14,22 +14,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Inline SVG favicon — works without public folder */}
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='10' fill='url(%23g)'/><circle cx='20' cy='20' r='13' stroke='white' stroke-width='1.5' stroke-opacity='.2' fill='none'/><circle cx='20' cy='20' r='8.5' stroke='white' stroke-width='1.5' stroke-opacity='.45' fill='none'/><circle cx='20' cy='20' r='3.5' fill='white'/><path d='M27.5 12.5 A10.5 10.5 0 0 1 31 20' stroke='white' stroke-width='3' stroke-linecap='round' fill='none'/><circle cx='27.5' cy='12.5' r='2.2' fill='white'/><defs><linearGradient id='g' x1='0' y1='0' x2='40' y2='40'><stop offset='0%25' stop-color='%236366f1'/><stop offset='100%25' stop-color='%237c3aed'/></linearGradient></defs></svg>" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         {/* Anti-flash script — runs before paint, applies dark class instantly */}
         <script dangerouslySetInnerHTML={{ __html: `
 (function() {
   try {
-    var t = localStorage.getItem('lz_dashboard_theme');
-    if (t === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.backgroundColor = '#0d0f17';
-      document.body && (document.body.style.backgroundColor = '#0d0f17');
-    } else if (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.backgroundColor = '#0d0f17';
+    var path = window.location.pathname;
+    var isDocs = path.startsWith('/docs');
+    var key = isDocs ? 'sv_docs_theme' : 'sv_dashboard_theme';
+    var cookieMatch = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+    var t = (cookieMatch ? cookieMatch[2] : null) || localStorage.getItem(key) || localStorage.getItem('sv_dashboard_theme');
+    var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var r = document.documentElement;
+    if (isDark) {
+      r.classList.add('dark');
+      r.style.backgroundColor = '#0d0f17';
+      r.style.setProperty('--docs-bg',        '#0d0f17');
+      r.style.setProperty('--docs-side-bg',   '#101218');
+      r.style.setProperty('--docs-nav-bg',    '#101218');
+      r.style.setProperty('--docs-nav-bdr',   '#1e293b');
+      r.style.setProperty('--docs-txt',       '#f1f5f9');
+      r.style.setProperty('--docs-muted',     '#64748b');
+      r.style.setProperty('--docs-bdr',       '#1e293b');
+      r.style.setProperty('--docs-input-bg',  '#1e293b');
+      r.style.setProperty('--docs-input-txt', '#cbd5e1');
     } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.style.backgroundColor = '#f8fafc';
+      r.classList.remove('dark');
+      r.style.backgroundColor = path === '/' ? '#ffffff' : '#f8fafc';
+      r.style.setProperty('--docs-bg',        '#ffffff');
+      r.style.setProperty('--docs-side-bg',   '#f9fafb');
+      r.style.setProperty('--docs-nav-bg',    '#ffffff');
+      r.style.setProperty('--docs-nav-bdr',   '#e5e7eb');
+      r.style.setProperty('--docs-txt',       '#111827');
+      r.style.setProperty('--docs-muted',     '#9ca3af');
+      r.style.setProperty('--docs-bdr',       '#e5e7eb');
+      r.style.setProperty('--docs-input-bg',  '#ffffff');
+      r.style.setProperty('--docs-input-txt', '#374151');
     }
   } catch(e) {}
 })();

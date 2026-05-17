@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, CheckCircle, AlertTriangle, Zap, Tag, Loader2, Sparkl
 import { api } from "@/lib/api";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
+import { getUser } from "@/lib/auth";
 
 interface Incident {
   id: string; pod_name: string; namespace: string; container_name?: string;
@@ -66,6 +67,7 @@ export default function IncidentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [diagLoading, setDiagLoading] = useState(false);
   const [acting, setActing] = useState(false);
+  const me = getUser();
 
   const load = async () => {
     setLoading(true);
@@ -102,7 +104,7 @@ export default function IncidentDetailPage() {
   };
 
   if (loading) return (
-    <div className="space-y-4 max-w-5xl animate-pulse">
+    <div className="space-y-4 animate-pulse">
       <div className="h-5 bg-gray-100 dark:bg-slate-800 rounded w-32"/>
       <div className="card p-6 space-y-3">
         <div className="flex gap-2"><div className="h-6 bg-gray-100 dark:bg-slate-800 rounded-full w-20"/><div className="h-6 bg-gray-100 dark:bg-slate-800 rounded-full w-16"/></div>
@@ -126,7 +128,7 @@ export default function IncidentDetailPage() {
   const labels = incident.pod_labels && Object.keys(incident.pod_labels).length > 0 ? incident.pod_labels : null;
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="space-y-5">
       <Link href="/dashboard/incidents" className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors group">
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"/> Back to incidents
       </Link>
@@ -142,18 +144,20 @@ export default function IncidentDetailPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{incident.pod_name}</h1>
             <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{incident.namespace}</p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {incident.status === "open" && (
-              <button onClick={acknowledge} disabled={acting} className="btn-secondary gap-2">
-                {acting?<Loader2 className="w-4 h-4 animate-spin"/>:<Clock className="w-4 h-4"/>} Acknowledge
-              </button>
-            )}
-            {incident.status !== "resolved" && (
-              <button onClick={resolve} disabled={acting} className="btn-primary gap-2">
-                {acting?<Loader2 className="w-4 h-4 animate-spin"/>:<CheckCircle className="w-4 h-4"/>} Mark resolved
-              </button>
-            )}
-          </div>
+          {["member", "admin"].includes(me?.role || "") && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {incident.status === "open" && (
+                <button onClick={acknowledge} disabled={acting} className="btn-secondary gap-2">
+                  {acting?<Loader2 className="w-4 h-4 animate-spin"/>:<Clock className="w-4 h-4"/>} Acknowledge
+                </button>
+              )}
+              {incident.status !== "resolved" && (
+                <button onClick={resolve} disabled={acting} className="btn-primary gap-2">
+                  {acting?<Loader2 className="w-4 h-4 animate-spin"/>:<CheckCircle className="w-4 h-4"/>} Mark resolved
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -227,9 +231,11 @@ export default function IncidentDetailPage() {
                   <p className="text-sm text-gray-700 dark:text-slate-300 bg-green-50 dark:bg-green-500/10 rounded-xl p-3 border border-green-100 dark:border-green-500/20">{incident.ai_diagnosis.prevention}</p>
                 </div>
               )}
-              <button onClick={diagnose} disabled={diagLoading} className="btn-secondary text-xs gap-2 mt-2">
-                <RefreshCw className={`w-3.5 h-3.5 ${diagLoading?"animate-spin":""}`}/> Re-run diagnosis
-              </button>
+              {["member", "admin"].includes(me?.role || "") && (
+                <button onClick={diagnose} disabled={diagLoading} className="btn-secondary text-xs gap-2 mt-2">
+                  <RefreshCw className={`w-3.5 h-3.5 ${diagLoading?"animate-spin":""}`}/> Re-run diagnosis
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl p-8">
@@ -238,9 +244,13 @@ export default function IncidentDetailPage() {
               </div>
               <p className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">AI-powered root cause analysis</p>
               <p className="text-xs text-gray-400 dark:text-slate-500 mb-5 leading-relaxed">On-demand analysis — never automatic.</p>
-              <button onClick={diagnose} disabled={diagLoading} className="btn-primary gap-2">
-                {diagLoading?<><Loader2 className="w-4 h-4 animate-spin"/>Analyzing...</>:<><Sparkles className="w-4 h-4"/>Run AI Diagnosis</>}
-              </button>
+              {["member", "admin"].includes(me?.role || "") ? (
+                <button onClick={diagnose} disabled={diagLoading} className="btn-primary gap-2">
+                  {diagLoading?<><Loader2 className="w-4 h-4 animate-spin"/>Analyzing...</>:<><Sparkles className="w-4 h-4"/>Run AI Diagnosis</>}
+                </button>
+              ) : (
+                <p className="text-xs text-indigo-500 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded-full">Only members and admins can run AI diagnosis</p>
+              )}
             </div>
           )}
         </div>

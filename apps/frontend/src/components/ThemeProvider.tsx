@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType>({
   setTheme: () => {},
 });
 
-const KEY = "lz_dashboard_theme";
+const KEY = "sv_dashboard_theme";
 
 function getSystem(): "light" | "dark" {
   if (typeof window === "undefined") return "light";

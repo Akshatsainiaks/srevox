@@ -52,7 +52,7 @@ export default function LoginPage() {
             <SrevoxLogo size={52} />
             <div>
               <div className="font-bold text-gray-900 text-2xl tracking-tight">Srevox</div>
-              <div className="text-sm text-gray-400 mt-0.5">Stay calm. We'll catch the crash loops.</div>
+              <div className="text-sm text-gray-400 mt-0.5">Catch crashes before your users do.</div>
             </div>
           </Link>
         </div>

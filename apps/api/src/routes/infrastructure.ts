@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import sql from "../db/sql.js";
 import { getUser } from "../middleware/rbac.js";
 import * as k8s from "@kubernetes/client-node";
+import { genId } from "../utils/id.js";
 
 // ── K8s client cache ──────────────────────────────────────────────────────────
 const clients = new Map<string, { core: k8s.CoreV1Api; metrics: k8s.Metrics }>();
@@ -75,7 +76,7 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
         nodeMetricsRes.items.map((m: any) => [m.metadata.name, m.usage])
       );
 
-      const nodes = nodesRes.body.items.map((node: any) => {
+      const nodes = nodesRes.items.map((node: any) => {
         const name = node.metadata.name;
         const usage = metricsMap.get(name) as any || {};
 
@@ -141,7 +142,7 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
         podMetricsRes.items.map((m: any) => [`${m.metadata.namespace}/${m.metadata.name}`, m.containers])
       );
 
-      const pods = podsRes.body.items.map((pod: any) => {
+      const pods = podsRes.items.map((pod: any) => {
         const name = pod.metadata.name;
         const ns   = pod.metadata.namespace;
         const key  = `${ns}/${name}`;
@@ -198,9 +199,10 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
     const { org_id } = getUser(req);
     const { cluster_id, resource_type, threshold_pct, target, target_name, severity } = req.body as any;
 
+    const id = genId("ral");
     const [alert] = await sql`
-      INSERT INTO resource_alerts (org_id, cluster_id, resource_type, threshold_pct, target, target_name, severity)
-      VALUES (${org_id}, ${cluster_id}, ${resource_type}, ${threshold_pct}, ${target}, ${target_name || null}, ${severity})
+      INSERT INTO resource_alerts (id, org_id, cluster_id, resource_type, threshold_pct, target, target_name, severity)
+      VALUES (${id}, ${org_id}, ${cluster_id}, ${resource_type}, ${threshold_pct}, ${target}, ${target_name || null}, ${severity})
       RETURNING *
     `;
     return { alert };

@@ -34,18 +34,23 @@ function CreateUserModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [sentEmail, setSentEmail] = useState(false);
+  const [successData, setSuccessData] = useState<{email?: string, previewUrl?: string}>({});
   const { success, error } = useToast();
   const set = (k:string,v:string) => setForm(p=>({...p,[k]:v}));
 
   const copyPass = () => { navigator.clipboard.writeText(generatedPass); setCopied(true); setTimeout(()=>setCopied(false),2000); };
   const regen = () => setGeneratedPass(generatePassword());
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
-  const submit = async () => {
-    if (!form.email) return;
+  const submit = async (sendEmail: boolean) => {
+    if (!isValidEmail) return;
     setLoading(true);
+    setSentEmail(sendEmail);
     try {
-      await api.post("/api/users/create", { ...form, password: generatedPass, send_welcome_email: true });
-      success("User created!", `Welcome email sent to ${form.email}`);
+      const res = await api.post("/api/users/create", { ...form, password: generatedPass, send_welcome_email: sendEmail });
+      setSuccessData({ email: form.email, previewUrl: res.data.preview_url });
+      success("User created!", sendEmail ? `Welcome email sent to ${form.email}` : undefined);
       onCreated();
       setDone(true);
     } catch (err: any) {
@@ -70,7 +75,12 @@ function CreateUserModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0"/>
               <div>
                 <p className="font-semibold text-green-800 dark:text-green-300">User created successfully!</p>
-                <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">Welcome email sent to {form.email}</p>
+                {sentEmail && <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">Welcome email sent to {successData.email}</p>}
+                {successData.previewUrl && (
+                  <a href={successData.previewUrl} target="_blank" className="text-xs text-indigo-600 dark:text-indigo-400 underline mt-2 block bg-white dark:bg-[#151823] p-2 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+                    Open Ethereal Email Preview ↗
+                  </a>
+                )}
               </div>
             </div>
             <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-3">
@@ -93,6 +103,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
             <div>
               <label className="label">Email address</label>
               <input type="email" className="input" placeholder="rahul@company.com" value={form.email} onChange={e=>set("email",e.target.value)} />
+              {form.email && !isValidEmail && <p className="text-xs text-red-500 mt-1">Please enter a valid email address.</p>}
             </div>
             <div>
               <label className="label">Role</label>
@@ -100,7 +111,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
                 {(["admin","member","viewer"] as const).map(r=>{
                   const Icon = ROLE_ICONS[r];
                   return (
-                    <button key={r} onClick={()=>set("role",r)} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all capitalize ${form.role===r?"border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400":"border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800"}`}>
+                    <button type="button" key={r} onClick={()=>set("role",r)} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all capitalize ${form.role===r?"border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400":"border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800"}`}>
                       <Icon className="w-4 h-4 shrink-0"/>{r}
                     </button>
                   );
@@ -119,10 +130,13 @@ function CreateUserModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
               <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">This password will be emailed to the user. They should change it on first login.</p>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={submit} disabled={!form.email||loading} className="btn-primary flex-1 justify-center gap-2">
+              <button onClick={onClose} className="btn-secondary">Cancel</button>
+              <button onClick={() => submit(false)} disabled={!isValidEmail||loading} className="btn-secondary flex-1 justify-center">
+                {loading?"Creating...":"Create user"}
+              </button>
+              <button onClick={() => submit(true)} disabled={!isValidEmail||loading} className="btn-primary flex-1 justify-center gap-2">
                 <Mail className="w-4 h-4"/>
-                {loading?"Sending...":"Create & send invite"}
+                {loading?"Sending...":"Create & send email"}
               </button>
             </div>
           </div>
@@ -160,7 +174,7 @@ function EditRoleModal({ member, onClose, onSaved }: { member:Member; onClose:()
             {(["admin","member","viewer"] as const).map(r=>{
               const Icon = ROLE_ICONS[r];
               return (
-                <button key={r} onClick={()=>setRole(r)} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium capitalize transition-all ${role===r?"border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400":"border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400"}`}>
+                <button type="button" key={r} onClick={()=>setRole(r)} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium capitalize transition-all ${role===r?"border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400":"border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400"}`}>
                   <Icon className="w-3.5 h-3.5 shrink-0"/>{r}
                 </button>
               );
@@ -216,8 +230,12 @@ export default function TeamPage() {
     });
     if (!confirmed) return;
     try {
-      await api.post(`/api/users/${m.id}/reset-password`);
-      success("Password reset", `New password sent to ${m.email}`);
+      const res = await api.post(`/api/users/${m.id}/reset-password`);
+      if (res.data.preview_url) {
+        success("Password reset", `New password: ${res.data.new_password}. Email Preview: ${res.data.preview_url}`);
+      } else {
+        success("Password reset", `New password: ${res.data.new_password}`);
+      }
     } catch { error("Failed to reset password"); }
   };
 

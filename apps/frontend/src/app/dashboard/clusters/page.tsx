@@ -6,6 +6,7 @@ import type { Cluster } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
+import { getUser } from "@/lib/auth";
 
 const CONN_INFO: Record<string, { label: string; desc: string; color: string }> = {
   agent:       { label: "Agent (on-prem)",  desc: "Tiny pod inside your cluster. Outbound only — no inbound firewall rules.", color: "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20" },
@@ -152,6 +153,7 @@ export default function ClustersPage() {
   const [editing,  setEditing]  = useState<Cluster|null>(null);
   const { success, error } = useToast();
   const { confirm } = useConfirm();
+  const me = getUser();
 
   const load = () => {
     setLoading(true);
@@ -183,7 +185,9 @@ export default function ClustersPage() {
         </div>
         <div className="flex gap-2">
           <button onClick={load} className="btn-secondary p-2.5"><RefreshCw className="w-4 h-4"/></button>
-          <button onClick={()=>setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4"/>Add cluster</button>
+          {me?.role === "admin" && (
+            <button onClick={()=>setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4"/>Add cluster</button>
+          )}
         </div>
       </div>
 
@@ -197,7 +201,9 @@ export default function ClustersPage() {
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><Server className="w-8 h-8 text-indigo-400"/></div>
           <p className="font-bold text-gray-800 dark:text-white mb-1">No clusters connected yet</p>
           <p className="text-sm text-gray-400 dark:text-slate-500 mb-6">Connect your first Kubernetes cluster to start monitoring</p>
-          <button onClick={()=>setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4"/>Add your first cluster</button>
+          {me?.role === "admin" && (
+            <button onClick={()=>setShowAdd(true)} className="btn-primary"><Plus className="w-4 h-4"/>Add your first cluster</button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -223,8 +229,12 @@ export default function ClustersPage() {
                     {status==="connected"?<Wifi className="w-4 h-4 text-green-500"/>:status==="error"?<WifiOff className="w-4 h-4 text-red-500"/>:<Clock className="w-4 h-4 text-amber-500"/>}
                     <span className={`text-xs font-medium capitalize ${status==="connected"?"text-green-600 dark:text-green-400":status==="error"?"text-red-600 dark:text-red-400":"text-amber-600 dark:text-amber-400"}`}>{status}</span>
                   </div>
-                  <button onClick={()=>setEditing(cl)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"><Pencil className="w-4 h-4"/></button>
-                  <button onClick={()=>remove(cl)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                  {me?.role === "admin" && (
+                    <>
+                      <button onClick={()=>setEditing(cl)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"><Pencil className="w-4 h-4"/></button>
+                      <button onClick={()=>remove(cl)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                    </>
+                  )}
                 </div>
               </div>
             );

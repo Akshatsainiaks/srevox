@@ -1,9 +1,10 @@
 "use client";
 import { useLayoutEffect } from "react";
 import Link from "next/link";
+import { SrevoxLogo } from "@/components/Logo";
 import { useState } from "react";
 import {
-  Radio, Bell, Zap, Shield, Server, ArrowRight, CheckCircle,
+  Bell, Zap, Shield, Server, ArrowRight, CheckCircle,
   Mail, MessageSquare, Webhook, Menu, X, Star, ChevronDown,
   Eye, Clock, Sparkles, Globe, Lock, TrendingUp,
 } from "lucide-react";
@@ -76,7 +77,7 @@ const HOW_IT_WORKS = [
   },
   {
     step: "04",
-    title: "Stay calm — we watch 24/7",
+    title: "We watch 24/7 — you stay calm",
     desc: "When a pod crashes, you get notified instantly. Click 'Diagnose' for AI-powered fix suggestions.",
     icon: Eye,
   },
@@ -190,12 +191,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                <Radio className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-gray-900 text-lg">Srevox</span>
-            </Link>
+            <Link href="/" className="flex items-center gap-2.5"><SrevoxLogo size={32} /><span className="font-bold text-gray-900 text-lg ml-2">Srevox</span></Link>
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-6">
@@ -244,13 +240,13 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            Stay calm.<br />
-            <span className="gradient-text">We'll catch the crash loops.</span>
+            Catch crashes.<br />
+            <span className="gradient-text">Before your users do.</span>
           </h1>
 
           <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
             Srevox watches your Kubernetes pods 24/7 and instantly alerts you on Email, Teams, or WhatsApp
-            when crash loops happen — so you don't have to constantly check dashboards.
+            before your users notice — no more constantly checking dashboards.
           </p>
 
           {/* Alert preview pills */}
@@ -422,7 +418,7 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <div className="p-3 bg-gray-50 text-center text-xs text-gray-400 border-t">
-                  Srevox — Stay calm. We'll catch the crash loops.
+                  Srevox — Catch crashes before your users do.
                 </div>
               </div>
             </div>
@@ -508,7 +504,7 @@ export default function LandingPage() {
       <section id="about" className="py-24 px-4 bg-indigo-50">
         <div className="max-w-4xl mx-auto text-center">
           <div className="section-tag mb-6 mx-auto w-fit">
-            <Radio className="w-3.5 h-3.5" /> Our approach
+            <span>Our approach</span>
           </div>
           <h2 className="text-4xl font-bold text-gray-900 mb-6">Built by engineers, for engineers</h2>
           <p className="text-lg text-gray-600 leading-relaxed mb-8">
@@ -587,13 +583,10 @@ export default function LandingPage() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center">
-                  <Radio className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-bold text-white text-lg">Srevox</span>
+                <SrevoxLogo size={32} forceDark={true} />
               </div>
               <p className="text-sm leading-relaxed">
-                Stay calm. We'll catch the crash loops.
+                Catch crashes before your users do.
               </p>
               <p className="text-xs mt-3 text-gray-600">
                 Kubernetes pod crash alerting with AI diagnostics.

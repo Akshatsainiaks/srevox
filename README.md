@@ -1,77 +1,11 @@
-<!-- # 🔭 Srevox
-
-**Stay calm. We'll catch the crash loops.**
-
-Srevox is a Kubernetes pod crash alerting platform with AI-powered diagnostics.
-Instant alerts via Email, Microsoft Teams, WhatsApp, and Webhooks when your pods fail.
-
-## Architecture
-
-| Service | Language | Role |
-|---|---|---|
-| `apps/api` | Node.js + Fastify | Main REST API + JWT auth + Redis sessions |
-| `apps/backend` | Python + FastAPI | AI diagnosis microservice |
-| `apps/alert-worker` | Node.js | Redis subscriber → Email/Teams/WhatsApp sender |
-| `apps/watcher` | Go | K8s Watch API stream (zero cluster load) |
-| `apps/frontend` | Next.js TypeScript | Full web platform + landing page |
-
-## Quick Start
-
-```bash
-cp .env.example .env
-# Edit .env with your DB/Redis/AI credentials
-
-# 1. Start API
-cd apps/api && npm install && npm run dev
-
-# 2. Start AI service
-cd apps/backend && pip install -r requirements.txt && uvicorn ai_service:app --port 8000 --reload
-
-# 3. Start Alert Worker
-cd apps/alert-worker && npm install && npm run dev
-
-# 4. Start Frontend
-cd apps/frontend && npm install && npm run dev
-```
-
-Open http://localhost:3000
-
-Default login: `admin@srevox.local` / `admin123`
-
-## Database Setup
-
-```bash
-# On your PostgreSQL server:
-psql -U srevox -d srevox < infra/docker/postgres/init.sql
-```
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and fill in:
-- `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-- `REDIS_URL`
-- `BACKEND_SECRET_KEY` (32+ chars)
-- `ENCRYPTION_KEY` (32 chars exactly)
-- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (for AI diagnosis)
-- Alert channel credentials (SMTP, Teams webhook, Twilio)
-
-## Redis Channel
-
-The Go watcher and alert worker communicate via Redis pub/sub on channel `srevox:crashes`.
-
-Test manually:
-```bash
-redis-cli PUBLISH srevox:crashes '{"cluster_id":"YOUR_CLUSTER_ID","pod_name":"test-pod","namespace":"production","container_name":"app","crash_reason":"OOMKilled","restart_count":5,"pod_labels":{},"raw_event":{},"detected_at":"2026-03-22T10:00:00Z"}'
-``` -->
-
 <div align="center">
 
 <br/>
 
-<img src="https://img.shields.io/badge/-%E2%9A%A1%20SREVOX-6366f1?style=for-the-badge&logoColor=white&labelColor=0d0f17" height="52"/>
+<img src="https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/public/logo.svg" width="80" height="80" alt="Srevox"/>
 
-<h3>Kubernetes Pod Crash Alerting — Self-Hosted</h3>
-<p><i>Loop = CrashLoopBackOff &nbsp;·&nbsp; Zen = staying calm.</i></p>
+<h2>Srevox</h2>
+<p><b>Catch crashes before your users do.</b></p>
 
 <br/>
 
@@ -83,15 +17,7 @@ redis-cli PUBLISH srevox:crashes '{"cluster_id":"YOUR_CLUSTER_ID","pod_name":"te
 
 <br/>
 
-```
-Pod crashes → Go watcher → Redis → Alert worker → Your team notified in seconds
-```
-
-<br/>
-
 > 🐳 **No clone needed. Just Docker + your `.env` file.**
-
-<br/>
 
 </div>
 
@@ -99,46 +25,47 @@ Pod crashes → Go watcher → Redis → Alert worker → Your team notified in 
 
 ## What is Srevox?
 
-Srevox watches your Kubernetes clusters 24/7 using the **K8s Watch API** — a single persistent connection, no polling — and instantly notifies your team the moment a pod crashes.
+Srevox watches your Kubernetes clusters 24/7 using the **K8s Watch API** and instantly notifies your team the moment a pod crashes — with AI-powered root cause analysis.
 
-Built for teams running **on-premises, VMware, bare metal, private cloud, or air-gapped** infrastructure. No data leaves your network.
+Built for **on-premises, VMware, bare metal, private cloud, and air-gapped** environments. No data leaves your network.
 
 ---
 
 ## ✨ Features
 
-| | Feature | Description |
-|---|---|---|
-| ⚡ | **Instant detection** | Sub-5s crash detection via K8s Watch API |
-| 🔔 | **Multi-channel alerts** | Email, Microsoft Teams, Slack, WhatsApp, Webhook |
-| 🤖 | **AI diagnosis** | Root cause + fix steps via OpenAI, Anthropic, or local Ollama |
-| 🛡️ | **Noise control** | Cooldowns, restart thresholds, namespace filters |
-| 👤 | **Service owners** | Route alerts to the team that owns the crashing service |
-| ☁️ | **Any cluster** | EKS, GKE, AKS, on-prem, minikube, k3s, RKE |
-| 🔒 | **Self-hosted** | Runs entirely in your own infrastructure |
-| 🐳 | **Docker-native** | One `docker-compose.yml` — no build required |
+| Feature | Description |
+|---|---|
+| ⚡ **Instant detection** | Sub-5s crash detection via K8s Watch API — no polling |
+| 🔔 **Multi-channel alerts** | Email, Microsoft Teams, Slack, WhatsApp, Webhook |
+| 🤖 **AI diagnosis** | Root cause + fix steps via Groq, OpenAI, Anthropic, or local Ollama |
+| 🛡️ **Noise control** | Cooldowns, restart thresholds, namespace filters |
+| 👤 **Service owners** | Route alerts to the team that owns the crashing service |
+| ☁️ **Any cluster** | EKS, GKE, AKS, on-prem, minikube, k3s, RKE |
+| 🔒 **Self-hosted** | Runs entirely in your own infrastructure |
+| 🐳 **Docker-native** | One `docker-compose.yml` — no build required |
+| 👥 **Team management** | Invite team members, assign roles (admin/member/viewer) |
+| 🔑 **Per-user AI settings** | Each user configures their own AI provider and API key |
+
+> ⚠️ **Note:** Team management and user invitation features are currently under active development. Basic team viewing works but invite flows may have issues. This will be fully stable in v1.1.0.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start — No Clone Needed
 
-**Requirements:** Docker & Docker Compose — nothing else.
+**Requirements:** Docker & Docker Compose only.
 
-### 1. Download config files
+### 1. One-command setup
 
 ```bash
-mkdir srevox && cd srevox
-
-curl -o docker-compose.yml \
-  https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/docker-compose.yml
-
-curl -o .env \
-  https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/.env.example
+curl -fsSL https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/setup.sh | bash
 ```
 
-### 2. Configure your `.env`
+This downloads everything, creates your `.env`, and pulls all images.
+
+### 2. Edit `.env`
 
 ```bash
+cd srevox
 nano .env
 ```
 
@@ -146,7 +73,7 @@ Minimum required:
 
 ```env
 POSTGRES_PASSWORD=your_secure_password
-BACKEND_SECRET_KEY=any_random_string_min_32_chars___
+BACKEND_SECRET_KEY=any_random_32_char_string_here__
 ENCRYPTION_KEY=exactly_32_chars_here____________
 NEXT_PUBLIC_API_URL=http://YOUR_SERVER_IP:4000
 FRONTEND_URL=http://YOUR_SERVER_IP:3000
@@ -158,24 +85,25 @@ FRONTEND_URL=http://YOUR_SERVER_IP:3000
 docker compose up -d
 ```
 
-Docker pulls all images automatically. No Node, Go, or Python needed.
-
 | Service | URL |
 |---|---|
 | Dashboard | `http://YOUR_SERVER_IP:3000` |
 | API | `http://YOUR_SERVER_IP:4000` |
 
 **Default login:** `admin@srevox.local` / `admin123`
+
 > ⚠️ Change the default password immediately after first login.
 
-### 4. Connect your cluster
+---
+
+## 🔌 Connect Your K8s Cluster
 
 ```bash
 kubectl apply -f \
   https://raw.githubusercontent.com/Akshatsainiaks/srevox/main/srevox-agent.yml
 ```
 
-Then set your cluster details:
+Set your cluster details:
 
 ```bash
 kubectl set env deployment/srevox-agent -n kube-system \
@@ -184,7 +112,7 @@ kubectl set env deployment/srevox-agent -n kube-system \
   CLUSTER_NAME=production
 ```
 
-Get your `CLUSTER_ID` from: **Dashboard → Clusters → Add Cluster**
+Get `CLUSTER_ID` from: **Dashboard → Clusters → Add Cluster**
 
 ---
 
@@ -212,7 +140,7 @@ Get your `CLUSTER_ID` from: **Dashboard → Clusters → Add Cluster**
 ```
 
 **Crash flow:**
-1. Go watcher opens a Watch stream on the K8s Pods API
+1. Go watcher opens Watch stream on K8s Pods API
 2. Pod enters `OOMKilled` / `CrashLoopBackOff` / `Error`
 3. Watcher publishes JSON → Redis `srevox:crashes`
 4. Alert worker matches rules, applies filters, sends alerts
@@ -222,8 +150,6 @@ Get your `CLUSTER_ID` from: **Dashboard → Clusters → Add Cluster**
 
 ## 🐳 Docker Images
 
-All images on Docker Hub — pulled automatically by `docker compose up`:
-
 | Image | Tag |
 |---|---|
 | `akshatsaini08/srevox-api` | `latest` / `v1.0.0` |
@@ -231,53 +157,6 @@ All images on Docker Hub — pulled automatically by `docker compose up`:
 | `akshatsaini08/srevox-worker` | `latest` / `v1.0.0` |
 | `akshatsaini08/srevox-ai` | `latest` / `v1.0.0` |
 | `akshatsaini08/srevox-agent` | `latest` / `v1.0.0` |
-
-Use pinned versions in production:
-
-```yaml
-image: akshatsaini08/srevox-api:v1.0.0   # recommended for production
-image: akshatsaini08/srevox-api:latest    # always latest
-```
-
----
-
-## 🏢 On-Premises / Internal Network Setup
-
-### Network requirements
-
-```
-K8s nodes     ──(outbound TCP 6379)──▶  Srevox Redis host
-Your browser  ──(TCP 3000 / 4000)────▶  Srevox host
-Srevox host  ──(TCP 443, optional)──▶  OpenAI / Anthropic
-                                        (skip — use Ollama for air-gapped)
-```
-
-No inbound ports needed on K8s nodes. The agent connects **outbound only**.
-
-### Redis — open to internal network
-
-```bash
-# /etc/redis/redis.conf
-bind 0.0.0.0
-protected-mode no
-
-sudo systemctl restart redis
-redis-cli ping   # PONG
-```
-
-### Air-gapped / no internet
-
-```env
-AI_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
-```
-
-```bash
-docker run -d --name ollama -p 11434:11434 ollama/ollama
-docker exec ollama ollama pull llama3
-```
-
-Email alerts work with any internal SMTP relay — no internet required.
 
 ---
 
@@ -297,7 +176,8 @@ Email alerts work with any internal SMTP relay — no internet required.
 
 | Variable | Description |
 |---|---|
-| `AI_PROVIDER` | `openai` / `anthropic` / `ollama` |
+| `AI_PROVIDER` | `groq` / `openai` / `anthropic` / `ollama` |
+| `GROQ_API_KEY` | Groq key — free at console.groq.com |
 | `OPENAI_API_KEY` | OpenAI API key |
 | `ANTHROPIC_API_KEY` | Anthropic API key |
 | `OLLAMA_BASE_URL` | Ollama URL for local/offline AI |
@@ -306,19 +186,10 @@ Email alerts work with any internal SMTP relay — no internet required.
 
 | Variable | Description |
 |---|---|
-| `SMTP_HOST` | SMTP server (e.g. `smtp.gmail.com`) |
+| `SMTP_HOST` | SMTP server |
 | `SMTP_PORT` | SMTP port (`587` for TLS) |
 | `SMTP_USER` | SMTP username |
 | `SMTP_PASS` | SMTP password or app password |
-
-### Watcher Agent (set per cluster)
-
-| Variable | Description |
-|---|---|
-| `REDIS_URL` | Srevox Redis URL from inside the cluster |
-| `CLUSTER_ID` | UUID from Dashboard → Clusters → Add |
-| `CLUSTER_NAME` | Friendly name for this cluster |
-| `WATCH_NAMESPACES` | Comma-separated namespaces (empty = all) |
 
 ---
 
@@ -326,44 +197,48 @@ Email alerts work with any internal SMTP relay — no internet required.
 
 ### Email / Gmail
 ```
-smtp_host  →  smtp.gmail.com
-smtp_port  →  587
-smtp_user  →  you@gmail.com
-smtp_pass  →  App Password (Google Account → Security → App passwords)
-to         →  oncall@yourcompany.com
+smtp_host → smtp.gmail.com
+smtp_port → 587
+smtp_user → you@gmail.com
+smtp_pass → App Password (Google Account → Security → App passwords)
+to        → oncall@yourcompany.com
 ```
 
 ### Microsoft Teams
 ```
-webhook_url  →  https://your-org.webhook.office.com/webhookb2/...
+webhook_url → https://your-org.webhook.office.com/webhookb2/...
 ```
 
 ### Slack
 ```
-webhook_url  →  https://hooks.slack.com/services/...
+webhook_url → https://hooks.slack.com/services/...
 ```
 
 ### WhatsApp (via Twilio)
 ```
-account_sid  →  ACxxxxxxxx
-auth_token   →  your_token
-from         →  whatsapp:+14155238886
-to           →  whatsapp:+91XXXXXXXXXX
+account_sid → ACxxxxxxxx
+auth_token  → your_token
+from        → whatsapp:+14155238886
+to          → whatsapp:+91XXXXXXXXXX
 ```
 
-### Generic Webhook
-Srevox POSTs this JSON to any HTTP endpoint:
-```json
-{
-  "pod_name": "payment-svc-abc",
-  "namespace": "backend",
-  "crash_reason": "OOMKilled",
-  "restart_count": 5,
-  "severity": "critical",
-  "incident_id": "uuid",
-  "detected_at": "2026-05-14T14:00:00Z"
-}
-```
+---
+
+## 🤖 AI Diagnosis
+
+When an incident appears, click **AI Diagnosis** to get:
+- Root cause analysis
+- Step-by-step fix commands
+- kubectl commands with exact pod/namespace
+- Prevention recommendations
+
+**Supported providers:**
+- **Groq** — free, fast (recommended for self-hosted)
+- **OpenAI** — GPT-4o, GPT-4o-mini
+- **Anthropic** — Claude models
+- **Ollama** — fully local, no internet required
+
+Configure per-user in **Dashboard → Settings → AI Diagnosis**.
 
 ---
 
@@ -373,7 +248,6 @@ Srevox POSTs this JSON to any HTTP endpoint:
 ```bash
 redis-cli -h YOUR_REDIS_IP -p 6379 PUBSUB NUMSUB srevox:crashes
 # (integer) 1  ← worker connected
-# (integer) 0  ← worker not connected, check REDIS_URL
 ```
 
 ### Send a test crash event
@@ -388,35 +262,26 @@ redis-cli -h YOUR_REDIS_IP -p 6379 PUBLISH srevox:crashes '{
   "exit_code":      137,
   "pod_labels":     {},
   "raw_event":      {},
-  "detected_at":    "2026-05-14T14:00:00Z"
+  "detected_at":    "2026-05-16T14:00:00Z"
 }'
 ```
 
 ### Simulate a real pod crash
 ```bash
-# CrashLoopBackOff
 kubectl run crash-test --image=busybox --restart=Always -- /bin/sh -c "exit 1"
-
-# OOMKilled
-kubectl run oom-test --image=polinux/stress --restart=Always \
-  --limits='memory=64Mi' -- stress --vm 1 --vm-bytes 128M
-
-# Watch
 kubectl get pod crash-test -w
-
-# Cleanup
-kubectl delete pod crash-test oom-test
+kubectl delete pod crash-test
 ```
 
 ### Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `PUBSUB NUMSUB` → `0` | Worker not connected to Redis | Check `REDIS_URL` in `.env` |
+| `PUBSUB NUMSUB` → `0` | Worker not connected | Check `REDIS_URL` in `.env` |
 | `PUBLISH` returns `0` | No subscribers | Start alert worker |
-| `All channels filtered` | Rule has no channels attached | Dashboard → Alert Rules → add channel |
-| Agent can't reach Redis | Firewall or Redis bind | Open port 6379; set `bind 0.0.0.0` |
-| No incidents in dashboard | `CLUSTER_ID` mismatch | Must match UUID exactly from dashboard |
+| `All channels filtered` | Rule has no channels | Dashboard → Alert Rules → add channel |
+| Agent can't reach Redis | Firewall or bind | Open port 6379; `bind 0.0.0.0` |
+| No incidents in dashboard | `CLUSTER_ID` mismatch | Must match UUID exactly |
 
 ---
 
@@ -430,7 +295,6 @@ kubectl delete pod crash-test oom-test
 | Service owners | ❌ | ✅ | ✅ |
 | SSO / SAML | ❌ | ❌ | ✅ |
 | Audit logs | ❌ | ✅ | ✅ |
-| Priority support | ❌ | ✅ | ✅ dedicated |
 | Price | **Free** | **Coming soon** | **Contact us** |
 
 > ⭐ Star the repo to get notified when Pro launches.
@@ -439,18 +303,16 @@ kubectl delete pod crash-test oom-test
 
 ## 🔐 Security
 
-- Channel configs (webhook URLs, passwords) encrypted at rest in PostgreSQL
+- Channel configs encrypted at rest in PostgreSQL
 - JWT tokens signed with `BACKEND_SECRET_KEY`
-- Redis should be **LAN-only** — never expose port `6379` to the internet
-- Run behind nginx / Caddy with TLS for production
+- Redis should be **LAN-only** — never expose port `6379` to internet
+- Use nginx/Caddy with TLS for production
 
 ---
 
 ## 📄 License
 
-Srevox is **source-available**. You may self-host it for personal or internal company use. Commercial redistribution, reselling, or offering it as a managed service requires a commercial license.
-
-See [LICENSE](LICENSE) for full terms.
+Srevox is **source-available**. You may self-host for personal or internal company use. Commercial redistribution or managed service requires a commercial license.
 
 ---
 
@@ -460,12 +322,8 @@ See [LICENSE](LICENSE) for full terms.
 
 *No cloud. No SaaS. No data leaving your network.*
 
-<br/>
+⚡ **Srevox** — Catch crashes before your users do.
 
-⚡ **Srevox** — Stay calm when your pods don't.
-
-<br/>
-
-[🐳 Docker Hub](https://hub.docker.com/u/akshatsaini08) &nbsp;·&nbsp; [🐛 Issues](https://github.com/Akshatsainiaks/srevox/issues)
+[🐳 Docker Hub](https://hub.docker.com/u/akshatsaini08) · [🐛 Issues](https://github.com/Akshatsainiaks/srevox/issues)
 
 </div>

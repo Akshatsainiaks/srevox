@@ -9,7 +9,7 @@ export const api = axios.create({
 
 api.interceptors.request.use((cfg) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("lz_token");
+    const token = localStorage.getItem("sv_token");
     if (token) cfg.headers.Authorization = `Bearer ${token}`;
   }
   return cfg;
@@ -19,7 +19,7 @@ api.interceptors.response.use(
   (r) => r,
   (err) => {
     if (err.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("lz_token");
+      localStorage.removeItem("sv_token");
       localStorage.removeItem("lz_user");
       if (!window.location.pathname.includes("/login")) {
         window.location.href = "/login";

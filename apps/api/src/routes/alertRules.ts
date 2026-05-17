@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { randomUUID } from "crypto";
+import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
 import { CRASH_REASONS } from "../types/index.js";
@@ -50,7 +50,7 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
     `;
     if (!cluster) return reply.status(404).send({ detail: "Cluster not found in your organization" });
 
-    const id = randomUUID();
+    const id = genId("arl");
     await sql`
       INSERT INTO alert_rules
         (id, org_id, cluster_id, name, description, namespaces,

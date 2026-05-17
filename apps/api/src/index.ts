@@ -15,11 +15,13 @@ import preferencesRoutes   from "./routes/preferences.js";
 import sql                 from "./db/sql.js";
 import bcrypt              from "bcryptjs";
 import infrastructureRoutes from "./routes/infrastructure.js";
+import aiSettingsRoutes from './routes/aiSettings.js';
 import resourceAlertRoutes  from "./routes/resourceAlerts.js";
 
 const app = Fastify({ logger: { level: "info" } });
 
-await app.register(cors, {
+async function start() {
+  await app.register(cors, {
   origin: [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -52,6 +54,7 @@ await app.register(serviceOwnerRoutes, { prefix: "/api/service-owners" });
 await app.register(preferencesRoutes,  { prefix: "/api/preferences" });
 await app.register(infrastructureRoutes, { prefix: "/api/infrastructure" });
 await app.register(resourceAlertRoutes,  { prefix: "/api/resource-alerts" });
+await app.register(aiSettingsRoutes,     { prefix: "/api/ai-settings" });
 
 app.get("/health", async () => ({
   status: "ok", service: "srevox-api", version: "1.0.0",
@@ -80,12 +83,15 @@ async function seedDefaults() {
   }
 }
 
-const PORT = Number(process.env.API_PORT || 4000);
-try {
-  await seedDefaults();
-  await app.listen({ port: PORT, host: "0.0.0.0" });
-  console.log(`🚀 Srevox API running on http://localhost:${PORT}`);
-} catch (err) {
-  app.log.error(err);
-  process.exit(1);
+  const PORT = Number(process.env.API_PORT || 4000);
+  try {
+    await seedDefaults();
+    await app.listen({ port: PORT, host: "0.0.0.0" });
+    console.log(`🚀 Srevox API running on http://localhost:${PORT}`);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
 }
+
+start();
