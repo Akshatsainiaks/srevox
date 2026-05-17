@@ -330,7 +330,7 @@ Srevox is **source-available**. You may self-host for personal or internal compa
 
 
 
-<!-- second -->
+
 
 <div align="center">
 
@@ -443,10 +443,10 @@ Srevox is **source-available**. You may self-host for personal or internal compa
 
 ```mermaid
 flowchart LR
-    A([Your Server]) -->|curl setup.sh| B[Download Files]
-    B --> C[Edit .env]
-    C --> D[docker compose up]
-    D --> E([Srevox Running])
+    A([🖥️ Your Server]) -->|curl setup.sh| B[📥 Download Files]
+    B --> C[📝 Edit .env]
+    C --> D[🐳 docker compose up]
+    D --> E([✅ Srevox Running])
 
     style A fill:#1e293b,stroke:#6366f1,color:#e2e8f0
     style B fill:#1e293b,stroke:#0ea5e9,color:#e2e8f0
@@ -501,22 +501,22 @@ docker compose up -d
 
 ```mermaid
 graph TB
-    subgraph K8S["Kubernetes Cluster"]
+    subgraph K8S["☸️ Kubernetes Cluster"]
         P1[Pod: healthy]
-        P2[Pod: crashing]
+        P2[Pod: 💥 crashing]
         P3[Pod: healthy]
-        AG[Srevox Agent\nGo Watcher]
+        AG[🕵️ Srevox Agent\nGo Watcher]
         P2 -->|Watch API event| AG
     end
 
-    subgraph SREVOX["Your Internal Network — Srevox Stack"]
+    subgraph SREVOX["🏠 Your Internal Network — Srevox Stack"]
         direction TB
-        R[(Redis 7\nPub/Sub)]
-        W[Alert Worker\nNode.js]
-        API[API Server\nFastify :4000]
-        DB[(PostgreSQL 16\nIncidents + Config)]
-        AI[AI Service\nDiagnosis Engine]
-        FE[Dashboard\nNext.js :3000]
+        R[(🔴 Redis 7\nPub/Sub)]
+        W[⚙️ Alert Worker\nNode.js]
+        API[🚀 API Server\nFastify :4000]
+        DB[(🐘 PostgreSQL 16\nIncidents + Config)]
+        AI[🤖 AI Service\nDiagnosis Engine]
+        FE[🖥️ Dashboard\nNext.js :3000]
 
         R -->|srevox:crashes| W
         W -->|Save incident| DB
@@ -526,7 +526,7 @@ graph TB
         FE <-->|REST/WS| API
     end
 
-    subgraph CHANNELS["Alert Channels"]
+    subgraph CHANNELS["📣 Alert Channels"]
         SL[Slack]
         TE[Teams]
         EM[Email]
@@ -534,7 +534,7 @@ graph TB
         WH[Webhook]
     end
 
-    subgraph AI_PROVIDERS["AI Providers"]
+    subgraph AI_PROVIDERS["🧠 AI Providers"]
         GR[Groq]
         OA[OpenAI]
         AN[Anthropic]
@@ -555,23 +555,23 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant K8s as Kubernetes API
-    participant Agent as Srevox Agent
-    participant Redis as Redis
-    participant Worker as Alert Worker
-    participant AI as AI Service
-    participant Channel as Alert Channel
-    participant DB as PostgreSQL
-    participant User as Engineer
+    participant K8s as ☸️ Kubernetes API
+    participant Agent as 🕵️ Srevox Agent
+    participant Redis as 🔴 Redis
+    participant Worker as ⚙️ Alert Worker
+    participant AI as 🤖 AI Service
+    participant Channel as 📣 Alert Channel
+    participant DB as 🐘 PostgreSQL
+    participant User as 👤 Engineer
 
     K8s->>Agent: Pod enters OOMKilled / CrashLoopBackOff
     Note over Agent: Watch stream event — no polling
     Agent->>Redis: PUBLISH srevox:crashes {JSON}
-    Redis->>Worker: Event received (under 5s)
+    Redis->>Worker: Event received (<5s)
     Worker->>Worker: Apply filters, cooldowns, rules
     Worker->>DB: Save incident
     Worker->>Channel: Send alert (Slack/Teams/Email/WA)
-    Channel-->>User: Notification sent
+    Channel-->>User: 🔔 Notification
     User->>AI: Click "AI Diagnosis"
     AI->>K8s: Fetch pod logs & events
     AI->>AI: Analyze with LLM
@@ -582,16 +582,16 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    E([Crash Event]) --> F1{Namespace\nfiltered?}
-    F1 -->|Yes| DROP1([Drop])
-    F1 -->|No| F2{Restart count\nthreshold met?}
-    F2 -->|No| DROP2([Drop])
+    E([📨 Crash Event]) --> F1{Namespace\nfiltered?}
+    F1 -->|Yes| DROP1([🚫 Drop])
+    F1 -->|No| F2{Restart count\n≥ threshold?}
+    F2 -->|No| DROP2([🚫 Drop])
     F2 -->|Yes| F3{Cooldown\nactive?}
-    F3 -->|Yes| DROP3([Suppressed])
+    F3 -->|Yes| DROP3([🚫 Suppressed])
     F3 -->|No| F4{Service owner\nrule match?}
-    F4 -->|Yes| OWN[Route to\nservice owner]
-    F4 -->|No| DEF[Default\nalert rule]
-    OWN & DEF --> SEND([Send Alert])
+    F4 -->|Yes| OWN[📬 Route to\nservice owner]
+    F4 -->|No| DEF[📢 Default\nalert rule]
+    OWN & DEF --> SEND([✅ Send Alert])
 
     style E fill:#6366f1,stroke:#818cf8,color:#fff
     style SEND fill:#16a34a,stroke:#22c55e,color:#fff
@@ -611,10 +611,10 @@ flowchart LR
     A[kubectl apply\nagent.yml] --> B[Agent Pod\nrunning in\nkube-system]
     B --> C[Set env vars\nREDIS_URL\nCLUSTER_ID]
     C --> D{Agent connects\nto Redis?}
-    D -->|Yes| E[Watch stream\nactive]
-    D -->|No| F[Check firewall\nport 6379]
+    D -->|✅ Yes| E[Watch stream\nactive]
+    D -->|❌ No| F[Check firewall\nport 6379]
     F --> C
-    E --> G([Cluster Monitored])
+    E --> G([✅ Cluster\nMonitored])
 
     style G fill:#16a34a,stroke:#22c55e,color:#fff
     style F fill:#7f1d1d,stroke:#ef4444,color:#fff
@@ -643,13 +643,13 @@ Click **"AI Diagnosis"** on any incident to instantly receive:
 
 ```mermaid
 mindmap
-  root((AI Diagnosis))
+  root((🤖 AI Diagnosis))
     Root Cause
       Why the pod crashed
       Memory / config / code issue
     Fix Commands
       kubectl commands
-      Exact pod and namespace
+      Exact pod & namespace
       Step-by-step order
     Prevention
       Resource limits
@@ -678,15 +678,15 @@ Configure per-user: **Dashboard → Settings → AI Diagnosis**
 
 ```mermaid
 graph LR
-    subgraph CONFIG["Configure in Dashboard"]
+    subgraph CONFIG["📝 Configure in Dashboard"]
         A[Alert Rules] --> B[Add Channel]
     end
 
-    B --> SL[Slack\nwebhook URL]
-    B --> TE[Teams\nwebhook URL]
-    B --> EM[Email\nSMTP config]
-    B --> WA[WhatsApp\nTwilio creds]
-    B --> WH[Webhook\nany HTTP endpoint]
+    B --> SL[🟢 Slack\nwebhook URL]
+    B --> TE[🔵 Teams\nwebhook URL]
+    B --> EM[📧 Email\nSMTP config]
+    B --> WA[📱 WhatsApp\nTwilio creds]
+    B --> WH[🔗 Webhook\nany HTTP endpoint]
 
     style CONFIG fill:#0f172a,stroke:#6366f1,color:#e2e8f0
 ```
@@ -789,14 +789,14 @@ All images are on [Docker Hub →](https://hub.docker.com/u/akshatsaini08)
 flowchart TD
     A([Start Testing]) --> B[Check Redis\nPUBSUB NUMSUB]
     B --> C{Subscribers\n= 1?}
-    C -->|No| D[Worker not connected\nCheck REDIS_URL in .env]
+    C -->|No| D[❌ Worker not connected\nCheck REDIS_URL in .env]
     C -->|Yes| E[Send test crash\nredis-cli PUBLISH]
     E --> F{Incident in\ndashboard?}
     F -->|No| G[Check CLUSTER_ID\nmust match exactly]
     F -->|Yes| H[Test real pod crash\nkubectl run crash-test]
     H --> I{Alert\nreceived?}
     I -->|No| J[Check alert rules\nhave channels added]
-    I -->|Yes| K([All working!])
+    I -->|Yes| K([✅ All working!])
 
     style A fill:#6366f1,stroke:#818cf8,color:#fff
     style K fill:#16a34a,stroke:#22c55e,color:#fff
@@ -940,3 +940,4 @@ Commercial redistribution or managed-service offerings require a [commercial lic
 <br/>
 
 </div>
+
