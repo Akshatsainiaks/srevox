@@ -583,7 +583,7 @@ export default function LandingPage() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <SrevoxLogo size={32} forceDark={true} />
+                <SrevoxLogo size={32} />
               </div>
               <p className="text-sm leading-relaxed">
                 Catch crashes before your users do.
