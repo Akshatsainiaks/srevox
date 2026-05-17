@@ -330,6 +330,8 @@ Srevox is **source-available**. You may self-host for personal or internal compa
 
 
 
+<!-- second -->
+
 <div align="center">
 
 <br/>
@@ -441,10 +443,10 @@ Srevox is **source-available**. You may self-host for personal or internal compa
 
 ```mermaid
 flowchart LR
-    A([🖥️ Your Server]) -->|curl setup.sh| B[📥 Download Files]
-    B --> C[📝 Edit .env]
-    C --> D[🐳 docker compose up]
-    D --> E([✅ Srevox Running])
+    A([Your Server]) -->|curl setup.sh| B[Download Files]
+    B --> C[Edit .env]
+    C --> D[docker compose up]
+    D --> E([Srevox Running])
 
     style A fill:#1e293b,stroke:#6366f1,color:#e2e8f0
     style B fill:#1e293b,stroke:#0ea5e9,color:#e2e8f0
