@@ -1,8 +1,6 @@
 import axios from "axios";
 
-const BASE = typeof window !== "undefined"
-  ? (window as any).__NEXT_PUBLIC_API_URL__ || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-  : process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const BASE = typeof window !== "undefined" ? "" : (process.env.API_URL || "http://localhost:4000");
 
 export const api = axios.create({
   baseURL: BASE,
