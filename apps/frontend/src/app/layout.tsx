@@ -13,7 +13,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `window.__NEXT_PUBLIC_API_URL__ = "${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}";` }} />
         {/* Inline SVG favicon — works without public folder */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         {/* Anti-flash script — runs before paint, applies dark class instantly */}

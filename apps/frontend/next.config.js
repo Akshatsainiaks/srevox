@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.API_URL || "http://srevox-api:4000"}/api/:path*`,
+        destination: "http://srevox-api:4000/api/:path*",
       },
     ];
   },
