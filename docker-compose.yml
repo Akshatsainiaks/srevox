@@ -96,6 +96,7 @@ services:
       - "3000:3000"
     env_file: .env
     environment:
+      API_URL: http://srevox-api:4000
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     depends_on:
       - api

@@ -17,7 +17,11 @@ CREATE TABLE users (
   full_name       TEXT DEFAULT '',
   role            TEXT DEFAULT 'member',
   created_at      TIMESTAMPTZ DEFAULT now(),
-  last_login_at   TIMESTAMPTZ
+  last_login_at       TIMESTAMPTZ,
+  is_active           BOOLEAN DEFAULT TRUE,
+  invited_by          TEXT,
+  invite_token        TEXT,
+  invite_expires_at   TIMESTAMPTZ
 );
 
 CREATE TABLE clusters (
@@ -123,3 +127,35 @@ CREATE INDEX idx_activity_org         ON activity_log(org_id, created_at DESC);
 -- Seed default org
 INSERT INTO organizations (id, name, slug, plan)
 VALUES ('00000000-0000-0000-0000-000000000001', 'My Organization', 'my-org', 'pro');
+
+CREATE TABLE IF NOT EXISTS service_owners (
+  id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id     TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  cluster_id TEXT REFERENCES clusters(id) ON DELETE CASCADE,
+  namespace  TEXT NOT NULL,
+  pod_prefix TEXT NOT NULL,
+  user_id    TEXT REFERENCES users(id) ON DELETE CASCADE,
+  channel_id TEXT REFERENCES channels(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ai_settings (
+  user_id    TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  provider   TEXT DEFAULT 'groq',
+  model      TEXT DEFAULT 'llama-3.1-8b-instant',
+  api_key    TEXT DEFAULT '',
+  ollama_url TEXT DEFAULT 'http://localhost:11434',
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Seed default admin user (password: admin123)
+INSERT INTO users (id, org_id, email, hashed_password, full_name, role, is_active)
+VALUES (
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001',
+  'admin@srevox.local',
+  crypt('admin123', gen_salt('bf')),
+  'Admin User',
+  'admin',
+  true
+) ON CONFLICT (email) DO NOTHING;
