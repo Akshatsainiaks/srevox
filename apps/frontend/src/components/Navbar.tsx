@@ -31,7 +31,7 @@ function timeAgo(iso: string) {
 
 async function loadRealNotifications(readIds: Set<string>): Promise<NotifItem[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/incidents?limit=20`, {
+    const res = await fetch(`${typeof window !== "undefined" ? (window as any).__NEXT_PUBLIC_API_URL__ || "http://localhost:4000" : "http://localhost:4000"}/api/incidents?limit=20`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("sv_token")}` },
     });
     if (!res.ok) return [];

@@ -30,7 +30,7 @@ export const setUser = (u: AuthUser) => {
 };
 
 // FIX 1: Use same BASE as api.ts so fetch hits port 4000, not 3000
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const BASE = typeof window !== "undefined" ? (window as any).__NEXT_PUBLIC_API_URL__ || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export const refreshUser = async (): Promise<AuthUser | null> => {
   const token = getToken();
