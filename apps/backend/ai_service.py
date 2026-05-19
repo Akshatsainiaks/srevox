@@ -60,7 +60,7 @@ async def call_openai(prompt: str) -> dict:
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"},
+            headers={"Authorization": f"Bearer {_ai_config['api_key']}"} if _ai_config['api_key'] else {},
             json={
                 "model": "gpt-4o-mini",
                 "messages": [
@@ -116,7 +116,7 @@ async def call_groq(prompt: str) -> dict:
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}"},
+            headers={"Authorization": f"Bearer {_ai_config['api_key']}"} if _ai_config['api_key'] else {},
             json={
                 "model": "llama-3.1-8b-instant",
                 "messages": [

@@ -159,3 +159,28 @@ VALUES (
   'admin',
   true
 ) ON CONFLICT (email) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS user_alert_preferences (
+  id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  user_id    TEXT REFERENCES users(id) ON DELETE CASCADE,
+  channel_id TEXT REFERENCES channels(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id)
+);
+
+
+
+CREATE TABLE IF NOT EXISTS resource_alerts (
+  id             TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id         TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  cluster_id     TEXT REFERENCES clusters(id) ON DELETE CASCADE,
+  resource_type  TEXT NOT NULL,
+  threshold_pct  INT DEFAULT 80,
+  target         TEXT DEFAULT 'all',
+  target_name    TEXT DEFAULT '',
+  severity       TEXT DEFAULT 'warning',
+  enabled        BOOLEAN DEFAULT true,
+  created_at     TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_resource_alerts_org ON resource_alerts(org_id);

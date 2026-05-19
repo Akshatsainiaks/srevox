@@ -60,7 +60,7 @@ export default async function channelRoutes(app: FastifyInstance) {
 
     try {
       const res = await axios.post(
-        `${process.env.ALERT_WORKER_URL || "http://localhost:3001"}/test`,
+        `${process.env.ALERT_WORKER_URL || "http://srevox-worker:3001"}/test`,
         { type: channel.type, config, test_message: { pod_name: "test-pod-srevox", namespace: "production", crash_reason: "OOMKilled", severity: "critical" } },
         { timeout: 15000 }
       );

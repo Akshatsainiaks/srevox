@@ -6,12 +6,33 @@ import (
 	"context"
 	"log"
 	"os"
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/loopzen/watcher/internal/k8s"
-	"github.com/loopzen/watcher/internal/publisher"
+	"github.com/srevox/watcher/internal/k8s"
+	"github.com/srevox/watcher/internal/publisher"
 )
+
+
+func sendHeartbeat(apiURL, clusterID string) {
+	if apiURL == "" {
+		return
+	}
+	body, _ := json.Marshal(map[string]string{
+		"status": "connected",
+	})
+	url := apiURL + "/api/clusters/" + clusterID + "/heartbeat"
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		log.Printf("Heartbeat failed: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -57,6 +78,13 @@ func main() {
 		cancel()
 	}()
 
+	apiURL := getEnv("API_URL", "http://srevox-api:4000")
+	go func() {
+		for {
+			sendHeartbeat(apiURL, clusterID)
+			time.Sleep(30 * time.Second)
+		}
+	}()
 	log.Printf("👀 Watching cluster: %s (%s)", clusterName, clusterID)
 	if err := watcher.Run(ctx); err != nil && err != context.Canceled {
 		log.Fatalf("Watcher error: %v", err)

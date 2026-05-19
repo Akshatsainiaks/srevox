@@ -1,4 +1,4 @@
-module github.com/loopzen/watcher
+module github.com/srevox/watcher
 
 go 1.25.0
 

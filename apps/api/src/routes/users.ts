@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { genId } from "../utils/id.js";
-import * as bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import sql from "../db/sql.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
 import { sendEmail } from "../services/email.js";

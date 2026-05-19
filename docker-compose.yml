@@ -54,6 +54,8 @@ services:
     environment:
       POSTGRES_HOST: postgres
       REDIS_URL:     redis://redis:6379
+      AI_SERVICE_URL: http://ai:8000
+      ALERT_WORKER_URL: http://worker:3001
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,6 +72,8 @@ services:
     environment:
       POSTGRES_HOST: postgres
       REDIS_URL:     redis://redis:6379
+      AI_SERVICE_URL: http://ai:8000
+      ALERT_WORKER_URL: http://worker:3001
     depends_on:
       postgres:
         condition: service_healthy

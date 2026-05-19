@@ -84,7 +84,9 @@ async function processEvent(event: CrashEvent): Promise<void> {
   }
 
   for (const rule of rules) {
-    if (event.restart_count < rule.min_restarts) {
+    const imagePullErrors = ["ImagePullBackOff", "ErrImagePull", "InvalidImageName"];
+    const skipThreshold = imagePullErrors.includes(event.crash_reason);
+    if (!skipThreshold && event.restart_count < rule.min_restarts) {
       console.log(`[alert-worker] Below restart threshold (${event.restart_count} < ${rule.min_restarts})`);
       continue;
     }
