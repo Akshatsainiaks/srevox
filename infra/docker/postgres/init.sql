@@ -72,8 +72,8 @@ CREATE TABLE alert_rules (
 CREATE TABLE incidents (
   id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   org_id          TEXT REFERENCES organizations(id) ON DELETE CASCADE,
-  cluster_id      TEXT REFERENCES clusters(id),
-  rule_id         TEXT REFERENCES alert_rules(id),
+  cluster_id      TEXT REFERENCES clusters(id) ON DELETE SET NULL,
+  rule_id         TEXT REFERENCES alert_rules(id) ON DELETE SET NULL,
   pod_name        TEXT NOT NULL,
   namespace       TEXT NOT NULL,
   container_name  TEXT,
@@ -96,7 +96,7 @@ CREATE TABLE incidents (
 CREATE TABLE alerts_sent (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   incident_id   TEXT REFERENCES incidents(id) ON DELETE CASCADE,
-  channel_id    TEXT REFERENCES channels(id),
+  channel_id    TEXT REFERENCES channels(id) ON DELETE SET NULL,
   channel_type  TEXT NOT NULL,
   status        TEXT NOT NULL,
   error_message TEXT,
@@ -161,10 +161,14 @@ VALUES (
 ) ON CONFLICT (email) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS user_alert_preferences (
-  id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  user_id    TEXT REFERENCES users(id) ON DELETE CASCADE,
-  channel_id TEXT REFERENCES channels(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
+  id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  org_id        TEXT REFERENCES organizations(id) ON DELETE CASCADE,
+  user_id       TEXT REFERENCES users(id) ON DELETE CASCADE,
+  channel_id    TEXT REFERENCES channels(id) ON DELETE SET NULL,
+  severities    JSONB DEFAULT '["critical","warning","info"]',
+  crash_reasons JSONB DEFAULT '[]',
+  namespaces    JSONB DEFAULT '[]',
+  created_at    TIMESTAMPTZ DEFAULT now(),
   UNIQUE(user_id)
 );
 

@@ -8,7 +8,7 @@ import { getUser } from "@/lib/auth";
 interface ServiceOwner {
   id: string; cluster_id: string; cluster_name: string;
   namespace?: string; pod_prefix?: string;
-  owner_user_id: string; owner_name: string; owner_email: string;
+  user_id: string; owner_name: string; owner_email: string;
   channel_ids: string[];
   created_at: string;
 }
@@ -41,7 +41,7 @@ function AddModal({
         cluster_id: clusterId,
         namespace:  namespace  || undefined,
         pod_prefix: podPrefix  || undefined,
-        owner_user_id: ownerUserId,
+        user_id: ownerUserId,
         channel_ids: selChannels,
       });
       onAdded(); onClose();

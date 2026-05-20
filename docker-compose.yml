@@ -52,7 +52,11 @@ services:
       - "${API_PORT:-4000}:4000"
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST:     \${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT:     \${POSTGRES_PORT:-5432}
+      POSTGRES_DB:       \${POSTGRES_DB:-srevox}
+      POSTGRES_USER:     \${POSTGRES_USER:-srevox}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
       REDIS_URL:     redis://redis:6379
       AI_SERVICE_URL: http://ai:8000
       ALERT_WORKER_URL: http://worker:3001
@@ -70,7 +74,11 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST:     \${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT:     \${POSTGRES_PORT:-5432}
+      POSTGRES_DB:       \${POSTGRES_DB:-srevox}
+      POSTGRES_USER:     \${POSTGRES_USER:-srevox}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
       REDIS_URL:     redis://redis:6379
       AI_SERVICE_URL: http://ai:8000
       ALERT_WORKER_URL: http://worker:3001
@@ -89,6 +97,15 @@ services:
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      POSTGRES_HOST:     \${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT:     \${POSTGRES_PORT:-5432}
+      POSTGRES_DB:       \${POSTGRES_DB:-srevox}
+      POSTGRES_USER:     \${POSTGRES_USER:-srevox}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - srevox
 
