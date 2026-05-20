@@ -247,10 +247,10 @@ async function getServiceOwnerChannels(
   const ownerUserIds = new Set<string>();
   try {
     const { rows: owners } = await db.query(
-      `SELECT so.channel_ids, so.owner_user_id,
+      `SELECT so.channel_ids, so.user_id,
               u.personal_channel_id, u.full_name, u.email
        FROM service_owners so
-       LEFT JOIN users u ON so.owner_user_id = u.id
+       LEFT JOIN users u ON so.user_id = u.id
        WHERE so.cluster_id = $1 AND so.org_id = $2
          AND (so.namespace IS NULL OR so.namespace = $3)
          AND (so.pod_prefix IS NULL OR $4 LIKE so.pod_prefix || '%')
@@ -267,14 +267,14 @@ async function getServiceOwnerChannels(
     const channelUserMap = new Map<string, string>();
 
     for (const owner of owners) {
-      ownerUserIds.add(owner.owner_user_id);
+      ownerUserIds.add(owner.user_id);
       parseJsonArr(owner.channel_ids).forEach((id: string) => {
         channelIds.add(id);
-        channelUserMap.set(id, owner.owner_user_id);
+        channelUserMap.set(id, owner.user_id);
       });
       if (owner.personal_channel_id) {
         channelIds.add(owner.personal_channel_id);
-        channelUserMap.set(owner.personal_channel_id, owner.owner_user_id);
+        channelUserMap.set(owner.personal_channel_id, owner.user_id);
       }
       console.log(`[alert-worker] 👤 Owner: ${owner.full_name || owner.email}`);
     }
