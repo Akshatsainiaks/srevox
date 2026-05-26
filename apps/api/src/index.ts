@@ -78,6 +78,21 @@ async function seedDefaults() {
       `;
       console.log("✅ Default admin: admin@srevox.local / admin123");
     }
+    // Seed default catch-all alert rule
+    const [existingRule] = await sql`SELECT id FROM alert_rules WHERE name = 'Default — All Crashes' LIMIT 1`;
+    if (!existingRule) {
+      await sql`
+        INSERT INTO alert_rules (id, org_id, cluster_id, name, namespaces, crash_reasons, min_restarts, cooldown_minutes, severity, channel_ids, enabled)
+        VALUES (
+          '00000000-0000-0000-0000-000000000003',
+          '00000000-0000-0000-0000-000000000001',
+          NULL,
+          'Default — All Crashes',
+          '[]', '[]', 0, 5, 'warning', '[]', true
+        ) ON CONFLICT DO NOTHING
+      `;
+      console.log("✅ Default catch-all alert rule created");
+    }
   } catch (err) {
     console.warn("[seed] skipped:", err);
   }
@@ -85,7 +100,8 @@ async function seedDefaults() {
 
   const PORT = Number(process.env.API_PORT || 4000);
   try {
-    await seedDefaults();
+    await runMigrations();
+  await seedDefaults();
     await app.listen({ port: PORT, host: "0.0.0.0" });
     console.log(`🚀 Srevox API running on http://localhost:${PORT}`);
   } catch (err) {

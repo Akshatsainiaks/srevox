@@ -21,7 +21,8 @@ CREATE TABLE users (
   is_active           BOOLEAN DEFAULT TRUE,
   invited_by          TEXT,
   invite_token        TEXT,
-  invite_expires_at   TIMESTAMPTZ
+  invite_expires_at   TIMESTAMPTZ,
+  personal_channel_id TEXT
 );
 
 CREATE TABLE clusters (

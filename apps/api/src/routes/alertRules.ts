@@ -97,6 +97,7 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
+    await sql`UPDATE incidents SET rule_id = NULL WHERE rule_id = ${id}`;
     await sql`DELETE FROM alert_rules WHERE id = ${id} AND org_id = ${org_id}`;
     return { message: "Deleted" };
   });

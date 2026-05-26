@@ -102,6 +102,8 @@ export default async function clusterRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
+    await sql`UPDATE incidents SET cluster_id = NULL, rule_id = NULL WHERE cluster_id = ${id}`;
+    await sql`DELETE FROM alert_rules WHERE cluster_id = ${id}`;
     await sql`DELETE FROM clusters WHERE id = ${id} AND org_id = ${org_id}`;
     await invalidateCache(`clusters:${org_id}`);
     return { message: "Removed" };

@@ -156,6 +156,8 @@ function EditRoleModal({ member, onClose, onSaved }: { member:Member; onClose:()
     try {
       await api.patch(`/api/users/${member.id}/role`, { role });
       success("Role updated", `${member.email} is now ${role}`);
+      onSaved();
+      onClose();
       onSaved(); onClose();
     } catch { error("Failed to update role"); }
     finally { setLoading(false); }

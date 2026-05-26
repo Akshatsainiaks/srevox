@@ -228,7 +228,8 @@ async function getMatchingRules(event: CrashEvent) {
      FROM alert_rules ar
      JOIN clusters c ON ar.cluster_id = c.id
      JOIN organizations o ON ar.org_id = o.id
-     WHERE ar.cluster_id = $1 AND ar.enabled = true`,
+     WHERE ar.enabled = true
+       AND (ar.cluster_id = $1 OR ar.cluster_id IS NULL)`,
     [event.cluster_id]
   );
   return rows.filter((rule) => {

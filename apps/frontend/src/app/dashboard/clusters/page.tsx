@@ -52,7 +52,17 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
           <div className="p-6 space-y-4">
             <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-100 dark:border-green-500/20">
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
-              <div><p className="font-semibold text-green-800 dark:text-green-300">Cluster added!</p><p className="text-sm text-green-600 dark:text-green-500 mt-0.5">Cluster ID: <span className="font-mono">{result.id}</span></p></div>
+              <div>
+  <p className="font-semibold text-green-800 dark:text-green-300">Cluster added!</p>
+  <p className="text-sm text-green-600 dark:text-green-500 mt-0.5">Cluster ID:</p>
+  <div className="flex items-center gap-2 mt-1">
+    <span className="font-mono text-sm bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">{result.id}</span>
+    <button onClick={() => { navigator.clipboard.writeText(result.id); }}
+      className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+      Copy
+    </button>
+  </div>
+</div>
             </div>
             {result.install_command && (
               <div>

@@ -194,7 +194,7 @@ export default function Navbar() {
               {user?.email?.[0]?.toUpperCase()}
             </div>
             <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-tight max-w-[120px] truncate">{user?.full_name || user?.email?.split("@")[0]}</div>
+              <div className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-tight max-w-[120px] truncate">{(user?.full_name || user?.email?.split("@")[0] || "").split(" ").map((w:string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</div>
               <div className={`text-[11px] flex items-center gap-1 leading-tight ${ROLE_COLORS[user?.role||"viewer"]}`}><RoleIcon className="w-2.5 h-2.5"/><span className="capitalize">{user?.role}</span></div>
             </div>
           </button>
@@ -205,7 +205,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white shadow-sm">{user?.email?.[0]?.toUpperCase()}</div>
                   <div className="min-w-0">
-                    <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{user?.full_name||"—"}</div>
+                    <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{(user?.full_name||"—").split(" ").map((w:string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</div>
                     <div className="text-xs text-gray-500 dark:text-slate-400 truncate">{user?.email}</div>
                     <div className={`text-xs flex items-center gap-1 mt-0.5 font-medium ${ROLE_COLORS[user?.role||"viewer"]}`}><RoleIcon className="w-2.5 h-2.5"/><span className="capitalize">{user?.role}</span></div>
                   </div>
