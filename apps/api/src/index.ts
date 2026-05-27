@@ -61,6 +61,53 @@ app.get("/health", async () => ({
   timestamp: new Date().toISOString(),
 }));
 
+
+// ── Auto-migration — runs on every startup, safe to re-run ──────────────────
+async function runMigrations() {
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_channel_id TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_by TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_token TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_expires_at TIMESTAMPTZ`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS org_id TEXT`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS severities JSONB DEFAULT '["critical","warning","info"]'`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS crash_reasons JSONB DEFAULT '[]'`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS namespaces JSONB DEFAULT '[]'`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS resource_alerts (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        org_id TEXT, cluster_id TEXT, resource_type TEXT NOT NULL,
+        threshold_pct INT DEFAULT 80, target TEXT DEFAULT 'all',
+        target_name TEXT DEFAULT '', severity TEXT DEFAULT 'warning',
+        enabled BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT now()
+      )`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS service_owners (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        org_id TEXT, cluster_id TEXT, namespace TEXT,
+        pod_prefix TEXT, user_id TEXT,
+        channel_ids JSONB DEFAULT '[]', created_at TIMESTAMPTZ DEFAULT now()
+      )`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS ai_settings (
+        user_id TEXT PRIMARY KEY, provider TEXT DEFAULT 'groq',
+        model TEXT DEFAULT 'llama-3.1-8b-instant',
+        api_key TEXT DEFAULT '', ollama_url TEXT DEFAULT 'http://localhost:11434',
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )`;
+    await sql`ALTER TABLE incidents DROP CONSTRAINT IF EXISTS incidents_cluster_id_fkey`;
+    await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE incidents DROP CONSTRAINT IF EXISTS incidents_rule_id_fkey`;
+    await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE alerts_sent DROP CONSTRAINT IF EXISTS alerts_sent_channel_id_fkey`;
+    await sql`ALTER TABLE alerts_sent ADD CONSTRAINT alerts_sent_channel_id_fkey FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE SET NULL`;
+    console.log("✅ Migrations complete");
+  } catch(e: any) {
+    console.error("Migration error:", e.message);
+  }
+}
+
 async function seedDefaults() {
   try {
     const [existing] = await sql`
