@@ -52,7 +52,7 @@ async function loadRealNotifications(readIds: Set<string>): Promise<NotifItem[]>
         time:  inc.first_seen_at,
         read:  readIds.has(id),
       };
-    }).sort((a: NotifItem, b: NotifItem) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 15);
+    }).filter((x: NotifItem) => x && x.time).sort((a: NotifItem, b: NotifItem) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 15);
   } catch { return []; }
 }
 

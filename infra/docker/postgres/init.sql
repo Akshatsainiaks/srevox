@@ -168,8 +168,14 @@ CREATE TABLE IF NOT EXISTS user_alert_preferences (
   channel_id    TEXT REFERENCES channels(id) ON DELETE SET NULL,
   severities    JSONB DEFAULT '["critical","warning","info"]',
   crash_reasons JSONB DEFAULT '[]',
-  namespaces    JSONB DEFAULT '[]',
-  created_at    TIMESTAMPTZ DEFAULT now(),
+  namespaces             JSONB DEFAULT '[]',
+  quiet_hours_enabled    BOOLEAN DEFAULT FALSE,
+  quiet_hours_start      TEXT,
+  quiet_hours_end        TEXT,
+  notify_resolved        BOOLEAN DEFAULT TRUE,
+  notify_acknowledged    BOOLEAN DEFAULT TRUE,
+  enabled                BOOLEAN DEFAULT TRUE,
+  created_at             TIMESTAMPTZ DEFAULT now(),
   UNIQUE(user_id)
 );
 

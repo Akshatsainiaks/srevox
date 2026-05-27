@@ -74,6 +74,12 @@ async function runMigrations() {
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS severities JSONB DEFAULT '["critical","warning","info"]'`;
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS crash_reasons JSONB DEFAULT '[]'`;
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS namespaces JSONB DEFAULT '[]'`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS quiet_hours_start TEXT`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS quiet_hours_end TEXT`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS quiet_hours_enabled BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS notify_resolved BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS notify_acknowledged BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE`;
     await sql`
       CREATE TABLE IF NOT EXISTS resource_alerts (
         id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
