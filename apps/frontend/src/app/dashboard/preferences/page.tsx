@@ -131,7 +131,7 @@ export default function PreferencesPage() {
           onClick={() => setPrefs(p => ({ ...p, enabled: !p.enabled }))}
           className={`relative w-12 h-6 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${prefs.enabled ? "bg-indigo-600" : "bg-gray-200 dark:bg-slate-700"}`}
         >
-          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${prefs.enabled ? "translate-x-6" : "translate-x-0.5"}`} />
+          <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow-sm transition-transform duration-200" style={{ backgroundColor: "#ffffff", transform: prefs.enabled ? "translateX(24px)" : "translateX(0px)" }} />
         </button>
       </div>
 
@@ -223,7 +223,7 @@ export default function PreferencesPage() {
             <label className="flex items-center gap-3 cursor-pointer mb-4">
               <div className={`relative w-10 h-5 rounded-full transition-colors ${prefs.quiet_hours_start != null ? "bg-indigo-600" : "bg-gray-200 dark:bg-slate-700"}`}
                 onClick={() => setPrefs(p => ({ ...p, quiet_hours_start: p.quiet_hours_start != null ? null : 22, quiet_hours_end: p.quiet_hours_end != null ? null : 8 }))}>
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${prefs.quiet_hours_start != null ? "translate-x-5" : "translate-x-0.5"}`} />
+                <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow-sm transition-transform" style={{ backgroundColor: "#ffffff", transform: prefs.quiet_hours_start != null ? "translateX(20px)" : "translateX(0px)" }} />
               </div>
               <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable quiet hours</span>
             </label>
@@ -264,7 +264,7 @@ export default function PreferencesPage() {
                 <label key={item.key} className="flex items-start gap-3 cursor-pointer group">
                   <div className={`relative w-10 h-5 rounded-full mt-0.5 transition-colors shrink-0 ${(prefs as any)[item.key] ? "bg-indigo-600" : "bg-gray-200 dark:bg-slate-700"}`}
                     onClick={() => setPrefs(p => ({ ...p, [item.key]: !(p as any)[item.key] }))}>
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${(prefs as any)[item.key] ? "translate-x-5" : "translate-x-0.5"}`} />
+                    <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow-sm transition-transform" style={{ backgroundColor: "#ffffff", transform: (prefs as any)[item.key] ? "translateX(20px)" : "translateX(0px)" }} />
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-gray-800 dark:text-slate-200">{item.label}</div>

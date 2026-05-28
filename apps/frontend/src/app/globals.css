@@ -178,3 +178,30 @@ body:has(#landing-root) {
   --docs-input-bg: #1e293b;
   --docs-input-txt: #cbd5e1;
 }
+
+
+@keyframes srevoxFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-12px) rotate(0deg);
+  }
+
+  75% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+.animate-srevoxFloat {
+  animation: srevoxFloat 5s ease-in-out infinite;
+}

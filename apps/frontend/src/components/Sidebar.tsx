@@ -1,10 +1,24 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+// import {
+//   LayoutDashboard, AlertTriangle, Server,
+//   Bell, BookOpen, FileText, Users, Boxes,
+//   SlidersHorizontal, ChevronRight, ChevronLeft,
+// } from "lucide-react";
 import {
-  LayoutDashboard, AlertTriangle, Server,
-  Bell, BookOpen, FileText, Users, Boxes,
-  SlidersHorizontal, ChevronRight, ChevronLeft,
+  LayoutDashboard,
+  AlertTriangle,
+  Server,
+  Bell,
+  BookOpen,
+  FileText,
+  Users,
+  Boxes,
+  SlidersHorizontal,
+  ChevronRight,
+  ChevronLeft,
+  TerminalSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getUser } from "@/lib/auth";
@@ -19,6 +33,7 @@ const NAV = [
   { href: "/dashboard/team",        label: "Team",           icon: Users },
   { href: "/dashboard/preferences", label: "My Preferences", icon: SlidersHorizontal },
   { href: "/dashboard/infrastructure", label: "Infrastructure", icon: Server },
+  
 ];
 
 interface SidebarProps {
@@ -87,7 +102,37 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           );
         })}
       </nav>
+     <Link
+  href="/dashboard/engineering"
+  title={collapsed ? "Engineering" : undefined}
+  className={cn(
+    "relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300 group mb-1",
 
+    // Always highlighted
+    "bg-gradient-to-r from-indigo-500/20 to-violet-500/10 border border-indigo-500/20 text-indigo-700 dark:text-white shadow-[0_0_25px_rgba(99,102,241,0.22)] hover:shadow-[0_0_35px_rgba(99,102,241,0.35)]",
+
+    collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
+  )}
+>
+  <TerminalSquare className="w-[18px] h-[18px] shrink-0 text-indigo-500 dark:text-indigo-400" />
+
+  {!collapsed && (
+    <>
+      <span className="flex-1 font-medium">
+        Engineering
+      </span>
+
+      {/* Pulse Dot */}
+      <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse shrink-0" />
+    </>
+  )}
+
+  {collapsed && (
+    <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 shadow-lg transition-opacity">
+      Engineering
+    </span>
+  )}
+</Link>
       {/* Docs at bottom */}
       <div className={cn(
         "shrink-0 border-t border-gray-100 dark:border-slate-800/80 py-3",

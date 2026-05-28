@@ -134,6 +134,8 @@ import { timeAgo, severityBadge, statusBadge, severityDot } from "@/lib/utils";
 const STATUSES   = ["", "open", "acknowledged", "resolved"] as const;
 const SEVERITIES = ["", "critical", "warning", "info"]      as const;
 
+const ITEMS_PER_PAGE = 10;
+
 export default function IncidentsPage() {
   const [incidents,  setIncidents]  = useState<Incident[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -141,6 +143,7 @@ export default function IncidentsPage() {
   const [status,     setStatus]     = useState("");
   const [severity,   setSeverity]   = useState("");
   const [search,     setSearch]     = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback((quiet = false) => {
     quiet ? setRefreshing(true) : setLoading(true);
@@ -155,12 +158,38 @@ export default function IncidentsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Reset page to 1 when filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, status, severity]);
+
   const filtered = incidents.filter((i) =>
     !search ||
     i.pod_name.toLowerCase().includes(search.toLowerCase()) ||
     i.namespace.toLowerCase().includes(search.toLowerCase()) ||
     i.crash_reason.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedIncidents = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const range = 2;
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - range && i <= currentPage + range)
+      ) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== "...") {
+        pages.push("...");
+      }
+    }
+    return pages;
+  };
 
   return (
     <div className="space-y-5">
@@ -180,29 +209,31 @@ export default function IncidentsPage() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input className="input pl-9 py-2" placeholder="Search pods, namespaces..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {STATUSES.map((s) => (
-            <button key={s} onClick={() => setStatus(s)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                status === s
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
-              }`}>
-              {s || "All status"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="input py-2 text-sm w-40 bg-white dark:bg-[#111422] border border-gray-200 dark:border-slate-800 rounded-xl text-gray-600 dark:text-slate-300"
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s ? s.charAt(0).toUpperCase() + s.slice(1) : "All Statuses"}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {SEVERITIES.map((s) => (
-            <button key={s} onClick={() => setSeverity(s)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                severity === s
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
-              }`}>
-              {s || "All severity"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <select
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value)}
+            className="input py-2 text-sm w-40 bg-white dark:bg-[#111422] border border-gray-200 dark:border-slate-800 rounded-xl text-gray-600 dark:text-slate-300"
+          >
+            {SEVERITIES.map((s) => (
+              <option key={s} value={s}>
+                {s ? s.charAt(0).toUpperCase() + s.slice(1) : "All Severities"}
+              </option>
+            ))}
+          </select>
         </div>
         <span className="text-xs text-gray-400 dark:text-slate-500 ml-auto">{filtered.length} results</span>
       </div>
@@ -229,7 +260,7 @@ export default function IncidentsPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-50 dark:divide-slate-800">
-            {filtered.map((inc) => (
+            {paginatedIncidents.map((inc) => (
               <Link key={inc.id} href={`/dashboard/incidents/${inc.id}`}
                 className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group">
                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${severityDot(inc.severity)}`} />
@@ -253,6 +284,57 @@ export default function IncidentsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#151823] border border-gray-100 dark:border-slate-800 rounded-2xl px-5 py-4 shadow-sm select-none">
+          <p className="text-xs text-gray-500 dark:text-slate-400">
+            Showing <span className="font-semibold text-gray-800 dark:text-white">{startIndex + 1}</span> to{" "}
+            <span className="font-semibold text-gray-800 dark:text-white">
+              {Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)}
+            </span>{" "}
+            of <span className="font-semibold text-gray-800 dark:text-white">{filtered.length}</span> results
+          </p>
+
+          <div className="flex items-center gap-1">
+            {/* Prev Button */}
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-gray-50 dark:disabled:hover:bg-slate-800 transition"
+            >
+              Previous
+            </button>
+
+            {/* Page Numbers */}
+            {getPageNumbers().map((p, idx) => (
+              <button
+                key={idx}
+                disabled={p === "..."}
+                onClick={() => typeof p === "number" && setCurrentPage(p)}
+                className={`w-8 h-8 rounded-xl text-xs font-semibold transition ${
+                  p === currentPage
+                    ? "bg-indigo-600 text-white"
+                    : p === "..."
+                    ? "text-gray-400 dark:text-slate-600 cursor-default"
+                    : "bg-transparent text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-gray-50 dark:disabled:hover:bg-slate-800 transition"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

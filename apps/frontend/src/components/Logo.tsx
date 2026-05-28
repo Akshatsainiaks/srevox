@@ -33,16 +33,11 @@ export function SrevoxLogo({ size = 32, className = "" }: { size?: number; class
 export function SrevoxWordmark({ size = "md", forceDark = false }: { size?: "sm" | "md" | "lg"; forceDark?: boolean }) {
   const dims = { sm: 28, md: 34, lg: 42 };
   const ts   = { sm: "text-sm", md: "text-base", lg: "text-xl" };
-  const ss   = { sm: "text-[9px]", md: "text-[10px]", lg: "text-xs" };
   const textColor = forceDark ? "text-white" : "text-gray-900 dark:text-white";
-  const subColor  = forceDark ? "text-blue-200" : "text-gray-400 dark:text-slate-500";
   return (
     <div className="flex items-center gap-2.5">
       <SrevoxLogo size={dims[size]} />
-      <div>
-        <div className={`font-bold leading-tight ${ts[size]} ${textColor}`}>Srevox</div>
-        {size !== "sm" && <div className={`leading-tight ${ss[size]} ${subColor}`}>Catch crashes before your users do.</div>}
-      </div>
+      <div className={`font-bold leading-tight ${ts[size]} ${textColor}`}>Srevox</div>
     </div>
   );
 }

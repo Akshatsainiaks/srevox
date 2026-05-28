@@ -104,7 +104,7 @@ export default function RulesPage() {
 
   const remove = async (id: string) => { if (!confirm("Delete this rule?")) return; await deleteRule(id); load(); };
   const toggle = async (id: string) => { await toggleRule(id); load(); };
-  const clusterName = (id: string) => clusters.find((c) => c.id === id)?.name || id.slice(0, 8);
+  const clusterName = (id: string | null) => !id ? 'All clusters' : clusters.find((c) => c.id === id)?.name || id.slice(0, 8);
 
   return (
     <div className="space-y-6">

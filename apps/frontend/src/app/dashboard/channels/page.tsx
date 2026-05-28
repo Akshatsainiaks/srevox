@@ -169,8 +169,8 @@ export default function ChannelsPage() {
                       <button onClick={() => test(ch.id)} disabled={testing === ch.id} className="btn-secondary text-xs py-1.5 px-3">
                         {testing === ch.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : testRes === "ok" ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : testRes === "fail" ? <AlertCircle className="w-3.5 h-3.5 text-red-500" /> : "Test"}
                       </button>
-                      <button onClick={() => toggle(ch.id)} className={`relative w-10 rounded-full transition-colors`} style={{ height: "22px", backgroundColor: ch.enabled ? "#6366f1" : "#e5e7eb" }}>
-                        <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" style={{ transform: ch.enabled ? "translateX(20px)" : "translateX(2px)" }} />
+                      <button onClick={() => toggle(ch.id)} className={`relative w-10 rounded-full transition-colors ${ch.enabled ? "bg-indigo-600" : "bg-gray-200 dark:bg-slate-700"}`} style={{ height: "22px" }}>
+                        <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform" style={{ backgroundColor: "#ffffff", transform: ch.enabled ? "translateX(20px)" : "translateX(0px)" }} />
                       </button>
                     </>
                   )}

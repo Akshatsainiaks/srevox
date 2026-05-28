@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Sidebar   from "@/components/Sidebar";
 import Navbar    from "@/components/Navbar";
 import AuthGuard from "@/components/AuthGuard";
+import UpdateAnnouncement from "@/components/UpdateAnnouncement";
 import { startRoleSync } from "@/lib/auth";
 
 function applyDashboardTheme() {
@@ -33,10 +34,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="shrink-0">
           <Navbar />
         </div>
+        <UpdateAnnouncement />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
           <main className="flex-1 overflow-y-auto min-w-0 bg-slate-50 dark:bg-[#0d0f17]">
-            <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="w-full px-6 py-6">
               {children}
             </div>
           </main>
