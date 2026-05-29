@@ -11,7 +11,7 @@ export const removeToken = () => {
 export const isAuthenticated = () => !!getToken();
 
 export interface AuthUser {
-  id: string; email: string; full_name: string; role: string; org_id?: string;
+  user_id: string; email: string; full_name: string; role: string; org_id?: string;
 }
 
 export const getUser = (): AuthUser | null => {
@@ -45,7 +45,7 @@ export const refreshUser = async (): Promise<AuthUser | null> => {
     }
     const data = await res.json();
     const user: AuthUser = {
-      id:        data.id,
+      user_id:   data.user_id,
       email:     data.email,
       full_name: data.full_name,
       role:      data.role,

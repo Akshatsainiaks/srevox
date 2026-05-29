@@ -11,7 +11,7 @@ const DEFAULT_REASONS = ["CrashLoopBackOff", "OOMKilled", "Error", "BackOff", "I
 
 function AddModal({ clusters, channels, onClose, onAdded }: { clusters: Cluster[]; channels: Channel[]; onClose: () => void; onAdded: () => void }) {
   const [name, setName] = useState("");
-  const [clusterId, setClusterId] = useState(clusters[0]?.id || "");
+  const [clusterId, setClusterId] = useState(clusters[0]?.cluster_id || "");
   const [desc, setDesc] = useState("");
   const [namespaces, setNs] = useState("");
   const [minRst, setMinRst] = useState(3);
@@ -44,7 +44,7 @@ function AddModal({ clusters, channels, onClose, onAdded }: { clusters: Cluster[
           <div>
             <label className="label">Cluster</label>
             <select className="input" value={clusterId} onChange={(e) => setClusterId(e.target.value)}>
-              {clusters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {clusters.map((c) => <option key={c.cluster_id} value={c.cluster_id}>{c.name}</option>)}
             </select>
           </div>
           <div><label className="label">Namespaces (comma-separated, empty = all)</label><input className="input" placeholder="production, staging" value={namespaces} onChange={(e) => setNs(e.target.value)} /></div>
@@ -67,8 +67,8 @@ function AddModal({ clusters, channels, onClose, onAdded }: { clusters: Cluster[
             ) : (
               <div className="space-y-2 bg-gray-50 dark:bg-slate-800 rounded-xl p-3">
                 {channels.map((ch) => (
-                  <label key={ch.id} className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={selChannels.includes(ch.id)} onChange={() => toggleCh(ch.id)} className="rounded" />
+                  <label key={ch.channel_id} className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={selChannels.includes(ch.channel_id)} onChange={() => toggleCh(ch.channel_id)} className="rounded" />
                     <span className="text-sm text-gray-700 dark:text-slate-300">{ch.name}</span>
                     <span className="badge bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-600 text-xs capitalize">{ch.type}</span>
                   </label>
@@ -104,7 +104,7 @@ export default function RulesPage() {
 
   const remove = async (id: string) => { if (!confirm("Delete this rule?")) return; await deleteRule(id); load(); };
   const toggle = async (id: string) => { await toggleRule(id); load(); };
-  const clusterName = (id: string | null) => !id ? 'All clusters' : clusters.find((c) => c.id === id)?.name || id.slice(0, 8);
+  const clusterName = (id: string | null) => !id ? 'All clusters' : clusters.find((c) => c.cluster_id === id)?.name || id.slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -135,7 +135,7 @@ export default function RulesPage() {
             const ns = parseArr(rule.namespaces);
             const reasons = parseArr(rule.crash_reasons);
             return (
-              <div key={rule.id} className={`card p-5 ${!rule.enabled ? "opacity-60" : ""}`}>
+              <div key={rule.rule_id} className={`card p-5 ${!rule.enabled ? "opacity-60" : ""}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -157,11 +157,11 @@ export default function RulesPage() {
                   </div>
                   {["admin", "member"].includes(me?.role || "viewer") && (
                     <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => toggle(rule.id)} className={`transition-colors ${rule.enabled ? "text-indigo-500 hover:text-indigo-700" : "text-gray-300 dark:text-slate-600 hover:text-indigo-400"}`}>
+                      <button onClick={() => toggle(rule.rule_id)} className={`transition-colors ${rule.enabled ? "text-indigo-500 hover:text-indigo-700" : "text-gray-300 dark:text-slate-600 hover:text-indigo-400"}`}>
                         {rule.enabled ? <ToggleRight className="w-7 h-7" /> : <ToggleLeft className="w-7 h-7" />}
                       </button>
                       {me?.role === "admin" && (
-                        <button onClick={() => remove(rule.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => remove(rule.rule_id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
                       )}
                     </div>
                   )}

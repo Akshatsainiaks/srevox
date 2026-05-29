@@ -222,12 +222,13 @@ async function dispatchAlert(
 }
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
+// ── DB helpers ────────────────────────────────────────────────────────────────
 async function getMatchingRules(event: CrashEvent) {
   const { rows } = await db.query(
-    `SELECT ar.*, o.id as org_id
+    `SELECT ar.*, o.org_id
      FROM alert_rules ar
-     JOIN clusters c ON ar.cluster_id = c.id
-     JOIN organizations o ON ar.org_id = o.id
+     JOIN clusters c ON ar.cluster_id = c.cluster_id
+     JOIN organizations o ON ar.org_id = o.org_id
      WHERE ar.enabled = true
        AND (ar.cluster_id = $1 OR ar.cluster_id IS NULL)`,
     [event.cluster_id]
@@ -251,7 +252,7 @@ async function getServiceOwnerChannels(
       `SELECT so.channel_ids, so.user_id,
               u.personal_channel_id, u.full_name, u.email
        FROM service_owners so
-       LEFT JOIN users u ON so.user_id = u.id
+       LEFT JOIN users u ON so.user_id = u.user_id
        WHERE so.cluster_id = $1 AND so.org_id = $2
          AND (so.namespace IS NULL OR so.namespace = $3)
          AND (so.pod_prefix IS NULL OR $4 LIKE so.pod_prefix || '%')
@@ -282,7 +283,7 @@ async function getServiceOwnerChannels(
 
     // Also notify admins
     const { rows: admins } = await db.query(
-      `SELECT personal_channel_id, id FROM users
+      `SELECT personal_channel_id, user_id AS id FROM users
        WHERE org_id = $1 AND role = 'admin' AND personal_channel_id IS NOT NULL`,
       [orgId]
     );
@@ -307,7 +308,7 @@ async function getServiceOwnerChannels(
 async function getChannels(channelIds: string[]): Promise<ChannelConfig[]> {
   if (!channelIds?.length) return [];
   const { rows } = await db.query(
-    "SELECT id, type, config_encrypted FROM channels WHERE id = ANY($1) AND enabled = true",
+    "SELECT channel_id AS id, type, config_encrypted FROM channels WHERE channel_id = ANY($1) AND enabled = true",
     [channelIds]
   );
   return rows.map((r) => {
@@ -328,10 +329,10 @@ async function upsertIncident(event: CrashEvent, rule: any): Promise<string | nu
   try {
     const { rows } = await db.query(
       `INSERT INTO incidents
-         (id, org_id, cluster_id, rule_id, pod_name, namespace, container_name,
+         (incident_id, org_id, cluster_id, rule_id, pod_name, namespace, container_name,
           crash_reason, restart_count, exit_code, pod_labels, raw_event, severity)
        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       RETURNING id`,
+       RETURNING incident_id AS id`,
       [
         rule.org_id, event.cluster_id, rule.id,
         event.pod_name, event.namespace, event.container_name,
@@ -361,14 +362,14 @@ async function logResults(
     console.log(`[alert-worker] ${ch.type}: ${status}${error ? " — " + error : ""}`);
     try {
       await db.query(
-        `INSERT INTO alerts_sent (id, incident_id, channel_id, channel_type, status, error_message)
+        `INSERT INTO alerts_sent (alert_sent_id, incident_id, channel_id, channel_type, status, error_message)
          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)`,
         [incidentId, ch.id, ch.type, status, error]
       );
       if (status === "sent")
-        await db.query(`UPDATE channels SET last_success_at = now() WHERE id = $1`, [ch.id]);
+        await db.query(`UPDATE channels SET last_success_at = now() WHERE channel_id = $1`, [ch.id]);
       else
-        await db.query(`UPDATE channels SET last_error = $1 WHERE id = $2`, [error, ch.id]);
+        await db.query(`UPDATE channels SET last_error = $1 WHERE channel_id = $2`, [error, ch.id]);
     } catch {}
   }
 }

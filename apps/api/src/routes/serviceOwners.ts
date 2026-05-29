@@ -18,8 +18,8 @@ export default async function serviceOwnerRoutes(app: FastifyInstance) {
         u.email      as owner_email,
         c.name       as cluster_name
       FROM service_owners so
-      LEFT JOIN users    u ON so.user_id = u.id
-      LEFT JOIN clusters c ON so.cluster_id    = c.id
+      LEFT JOIN users    u ON so.user_id = u.user_id
+      LEFT JOIN clusters c ON so.cluster_id    = c.cluster_id
       WHERE so.org_id = ${org_id}
       ORDER BY so.created_at DESC
     `;
@@ -51,22 +51,22 @@ export default async function serviceOwnerRoutes(app: FastifyInstance) {
       return reply.status(400).send({ detail: "cluster_id and user_id required" });
 
     // Verify cluster and user belong to this org
-    const [cluster] = await sql`SELECT id FROM clusters WHERE id = ${cluster_id} AND org_id = ${org_id}`;
+    const [cluster] = await sql`SELECT cluster_id AS id FROM clusters WHERE cluster_id = ${cluster_id} AND org_id = ${org_id}`;
     if (!cluster) return reply.status(404).send({ detail: "Cluster not in your org" });
 
-    const [user] = await sql`SELECT id FROM users WHERE id = ${user_id} AND org_id = ${org_id}`;
+    const [user] = await sql`SELECT user_id AS id FROM users WHERE user_id = ${user_id} AND org_id = ${org_id}`;
     if (!user) return reply.status(404).send({ detail: "User not in your org" });
 
     const id = genId("sro");
     await sql`
       INSERT INTO service_owners
-        (id, org_id, cluster_id, namespace, pod_prefix, user_id, channel_ids)
+        (service_owner_id, org_id, cluster_id, namespace, pod_prefix, user_id, channel_ids)
       VALUES
         (${id}, ${org_id}, ${cluster_id},
          ${namespace || null}, ${pod_prefix || null},
          ${user_id}, ${JSON.stringify(channel_ids)})
     `;
-    return { id, message: "Service owner assigned" };
+    return { service_owner_id: id, message: "Service owner assigned" };
   });
 
   // DELETE /api/service-owners/:id — admin only
@@ -75,7 +75,7 @@ export default async function serviceOwnerRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
-    await sql`DELETE FROM service_owners WHERE id = ${id} AND org_id = ${org_id}`;
+    await sql`DELETE FROM service_owners WHERE service_owner_id = ${id} AND org_id = ${org_id}`;
     return { message: "Deleted" };
   });
 
@@ -91,7 +91,7 @@ export default async function serviceOwnerRoutes(app: FastifyInstance) {
         u.full_name      as owner_name,
         u.personal_channel_id
       FROM service_owners so
-      LEFT JOIN users u ON so.user_id = u.id
+      LEFT JOIN users u ON so.user_id = u.user_id
       WHERE so.cluster_id = ${cluster_id}
         AND (so.namespace IS NULL OR so.namespace = ${namespace})
         AND (so.pod_prefix IS NULL OR ${pod_name} LIKE so.pod_prefix || '%')

@@ -51,7 +51,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
     const incidents = await sql`
       SELECT i.*, c.name as cluster_name
       FROM incidents i
-      LEFT JOIN clusters c ON i.cluster_id = c.id
+      LEFT JOIN clusters c ON i.cluster_id = c.cluster_id
       WHERE i.org_id = ${org_id}
         ${status     ? sql`AND i.status = ${status}`           : sql``}
         ${severity   ? sql`AND i.severity = ${severity}`       : sql``}
@@ -96,8 +96,8 @@ export default async function incidentRoutes(app: FastifyInstance) {
     const [incident] = await sql`
       SELECT i.*, c.name as cluster_name
       FROM incidents i
-      LEFT JOIN clusters c ON i.cluster_id = c.id
-      WHERE i.id = ${id} AND i.org_id = ${org_id}
+      LEFT JOIN clusters c ON i.cluster_id = c.cluster_id
+      WHERE i.incident_id = ${id} AND i.org_id = ${org_id}
     `;
     if (!incident) return reply.status(404).send({ detail: "Incident not found" });
     return incident;
@@ -109,10 +109,10 @@ export default async function incidentRoutes(app: FastifyInstance) {
     const id = genId("inc");
     await sql`
       INSERT INTO incidents
-        (id, org_id, cluster_id, rule_id, pod_name, namespace, container_name,
+        (incident_id, org_id, cluster_id, rule_id, pod_name, namespace, container_name,
          crash_reason, restart_count, exit_code, pod_labels, raw_event, severity)
       VALUES
-        (${id}, ${body.org_id || "00000000-0000-0000-0000-000000000001"},
+        (${id}, ${body.org_id || "orgjncj44t4hb4"},
          ${body.cluster_id}, ${body.rule_id || null},
          ${body.pod_name}, ${body.namespace}, ${body.container_name || null},
          ${body.crash_reason}, ${body.restart_count || 0}, ${body.exit_code || null},
@@ -121,7 +121,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
          ${body.severity || "warning"})
       ON CONFLICT DO NOTHING
     `;
-    return { id };
+    return { incident_id: id };
   });
 
   // PATCH /api/incidents/:id/acknowledge — member+
@@ -132,7 +132,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     await sql`
       UPDATE incidents SET status = 'acknowledged', acknowledged_by = ${sub}
-      WHERE id = ${id} AND org_id = ${org_id}
+      WHERE incident_id = ${id} AND org_id = ${org_id}
     `;
     return { message: "Acknowledged" };
   });
@@ -145,7 +145,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     await sql`
       UPDATE incidents SET status = 'resolved', resolved_at = now(), resolved_by = ${sub}
-      WHERE id = ${id} AND org_id = ${org_id}
+      WHERE incident_id = ${id} AND org_id = ${org_id}
     `;
     return { message: "Resolved" };
   });
@@ -157,7 +157,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
     const [incident] = await sql`
-      SELECT * FROM incidents WHERE id = ${id} AND org_id = ${org_id}
+      SELECT * FROM incidents WHERE incident_id = ${id} AND org_id = ${org_id}
     `;
     if (!incident) return reply.status(404).send({ detail: "Not found" });
     if (incident.ai_diagnosis) return { diagnosis: incident.ai_diagnosis, cached: true };

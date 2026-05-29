@@ -65,6 +65,41 @@ app.get("/health", async () => ({
 // ── Auto-migration — runs on every startup, safe to re-run ──────────────────
 async function runMigrations() {
   try {
+    // Helper to rename id to [entity]_id if it exists
+    const renameIfIdExists = async (table: string, newCol: string) => {
+      try {
+        await sql.unsafe(`ALTER TABLE ${table} RENAME COLUMN id TO ${newCol}`);
+        console.log(`Renamed column id to ${newCol} in table ${table}`);
+      } catch (err: any) {
+        // Ignore if 'id' column does not exist or already renamed
+      }
+    };
+
+    // Helper to rename any column if it exists
+    const renameColumnIfExists = async (table: string, oldCol: string, newCol: string) => {
+      try {
+        await sql.unsafe(`ALTER TABLE ${table} RENAME COLUMN ${oldCol} TO ${newCol}`);
+        console.log(`Renamed column ${oldCol} to ${newCol} in table ${table}`);
+      } catch (err: any) {
+        // Ignore if column does not exist
+      }
+    };
+
+    await renameIfIdExists("organizations", "org_id");
+    await renameIfIdExists("users", "user_id");
+    await renameIfIdExists("clusters", "cluster_id");
+    await renameIfIdExists("channels", "channel_id");
+    await renameIfIdExists("alert_rules", "rule_id");
+    await renameIfIdExists("incidents", "incident_id");
+    await renameIfIdExists("alerts_sent", "alert_sent_id");
+    await renameIfIdExists("activity_log", "activity_log_id");
+    await renameIfIdExists("service_owners", "service_owner_id");
+    await renameIfIdExists("user_alert_preferences", "preference_id");
+    await renameIfIdExists("resource_alerts", "resource_alert_id");
+    await renameIfIdExists("invitations", "invite_id");
+
+    await renameColumnIfExists("service_owners", "owner_user_id", "user_id");
+
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_channel_id TEXT`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_by TEXT`;
@@ -82,7 +117,7 @@ async function runMigrations() {
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE`;
     await sql`
       CREATE TABLE IF NOT EXISTS resource_alerts (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        resource_alert_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
         org_id TEXT, cluster_id TEXT, resource_type TEXT NOT NULL,
         threshold_pct INT DEFAULT 80, target TEXT DEFAULT 'all',
         target_name TEXT DEFAULT '', severity TEXT DEFAULT 'warning',
@@ -90,10 +125,10 @@ async function runMigrations() {
       )`;
     await sql`
       CREATE TABLE IF NOT EXISTS service_owners (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        service_owner_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
         org_id TEXT, cluster_id TEXT, namespace TEXT,
         pod_prefix TEXT, user_id TEXT,
-        channel_ids JSONB DEFAULT '[]', created_at TIMESTAMPTZ DEFAULT now()
+        channel_ids JSONB DEFAULT '[]', channel_id TEXT, created_at TIMESTAMPTZ DEFAULT now()
       )`;
     await sql`
       CREATE TABLE IF NOT EXISTS ai_settings (
@@ -103,11 +138,11 @@ async function runMigrations() {
         updated_at TIMESTAMPTZ DEFAULT now()
       )`;
     await sql`ALTER TABLE incidents DROP CONSTRAINT IF EXISTS incidents_cluster_id_fkey`;
-    await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(cluster_id) ON DELETE SET NULL`;
     await sql`ALTER TABLE incidents DROP CONSTRAINT IF EXISTS incidents_rule_id_fkey`;
-    await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES alert_rules(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES alert_rules(rule_id) ON DELETE SET NULL`;
     await sql`ALTER TABLE alerts_sent DROP CONSTRAINT IF EXISTS alerts_sent_channel_id_fkey`;
-    await sql`ALTER TABLE alerts_sent ADD CONSTRAINT alerts_sent_channel_id_fkey FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE alerts_sent ADD CONSTRAINT alerts_sent_channel_id_fkey FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE SET NULL`;
     console.log("✅ Migrations complete");
   } catch(e: any) {
     console.error("Migration error:", e.message);
@@ -117,28 +152,28 @@ async function runMigrations() {
 async function seedDefaults() {
   try {
     const [existing] = await sql`
-      SELECT id FROM users WHERE email = 'admin@srevox.local' LIMIT 1
+      SELECT user_id FROM users WHERE email = 'admin@srevox.local' LIMIT 1
     `;
     if (!existing) {
       const hashed = await bcrypt.hash("admin123", 12);
       await sql`
-        INSERT INTO users (id, org_id, email, hashed_password, full_name, role)
+        INSERT INTO users (user_id, org_id, email, hashed_password, full_name, role)
         VALUES (
-          '00000000-0000-0000-0000-000000000002',
-          '00000000-0000-0000-0000-000000000001',
+          'usrjncj44t4hb4',
+          'orgjncj44t4hb4',
           'admin@srevox.local', ${hashed}, 'Admin User', 'admin'
         ) ON CONFLICT DO NOTHING
       `;
       console.log("✅ Default admin: admin@srevox.local / admin123");
     }
     // Seed default catch-all alert rule
-    const [existingRule] = await sql`SELECT id FROM alert_rules WHERE name = 'Default — All Crashes' LIMIT 1`;
+    const [existingRule] = await sql`SELECT rule_id FROM alert_rules WHERE name = 'Default — All Crashes' LIMIT 1`;
     if (!existingRule) {
       await sql`
-        INSERT INTO alert_rules (id, org_id, cluster_id, name, namespaces, crash_reasons, min_restarts, cooldown_minutes, severity, channel_ids, enabled)
+        INSERT INTO alert_rules (rule_id, org_id, cluster_id, name, namespaces, crash_reasons, min_restarts, cooldown_minutes, severity, channel_ids, enabled)
         VALUES (
-          '00000000-0000-0000-0000-000000000003',
-          '00000000-0000-0000-0000-000000000001',
+          'rulejncj44t4hb4',
+          'orgjncj44t4hb4',
           NULL,
           'Default — All Crashes',
           '[]', '[]', 0, 5, 'warning', '[]', true

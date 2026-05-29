@@ -6,7 +6,7 @@ import { getUser } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
 
-interface Member { id: string; email: string; full_name?: string; role: string; is_active: boolean; created_at: string; last_login_at?: string; }
+interface Member { user_id: string; email: string; full_name?: string; role: string; is_active: boolean; created_at: string; last_login_at?: string; }
 
 const ROLE_ICONS: Record<string,React.ElementType> = { admin: Crown, member: Shield, viewer: Eye };
 const ROLE_COLORS: Record<string,string> = {
@@ -154,7 +154,7 @@ function EditRoleModal({ member, onClose, onSaved }: { member:Member; onClose:()
   const save = async () => {
     setLoading(true);
     try {
-      await api.patch(`/api/users/${member.id}/role`, { role });
+      await api.patch(`/api/users/${member.user_id}/role`, { role });
       success("Role updated", `${member.email} is now ${role}`);
       onSaved();
       onClose();
@@ -208,7 +208,7 @@ export default function TeamPage() {
   useEffect(()=>{load();},[]);
 
   const remove = async (m: Member) => {
-    if (m.id === me?.id) { error("Cannot remove yourself"); return; }
+    if (m.user_id === me?.user_id) { error("Cannot remove yourself"); return; }
     const { confirmed } = await confirm({
       title: `Remove ${m.full_name||m.email}?`,
       message: "They will lose access to the dashboard immediately. This cannot be undone.",
@@ -217,7 +217,7 @@ export default function TeamPage() {
     });
     if (!confirmed) return;
     try {
-      await api.delete(`/api/users/${m.id}`);
+      await api.delete(`/api/users/${m.user_id}`);
       success("Member removed", m.email);
       load();
     } catch { error("Failed to remove member"); }
@@ -232,7 +232,7 @@ export default function TeamPage() {
     });
     if (!confirmed) return;
     try {
-      const res = await api.post(`/api/users/${m.id}/reset-password`);
+      const res = await api.post(`/api/users/${m.user_id}/reset-password`);
       if (res.data.preview_url) {
         success("Password reset", `New password: ${res.data.new_password}. Email Preview: ${res.data.preview_url}`);
       } else {
@@ -290,14 +290,14 @@ export default function TeamPage() {
             {members.map(m=>{
               const Icon = ROLE_ICONS[m.role]||Shield;
               return (
-                <div key={m.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
+                <div key={m.user_id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
                   <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
                     {(m.full_name||m.email)[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-gray-800 dark:text-slate-200 text-sm">{m.full_name||m.email}</span>
-                      {m.id===me?.id&&<span className="text-xs bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md font-medium">You</span>}
+                      {m.user_id===me?.user_id&&<span className="text-xs bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md font-medium">You</span>}
                     </div>
                     <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-2">
                       <span>{m.email}</span>
@@ -306,7 +306,7 @@ export default function TeamPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`badge text-xs ${ROLE_COLORS[m.role]}`}><Icon className="w-3 h-3 mr-1"/>{m.role}</span>
-                    {me?.role==="admin"&&m.id!==me?.id&&(
+                    {me?.role==="admin"&&m.user_id!==me?.user_id&&(
                       <>
                         <button onClick={()=>setEditing(m)} title="Edit role" className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"><Pencil className="w-3.5 h-3.5"/></button>
                         <button onClick={()=>resetPassword(m)} title="Reset password" className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"><Key className="w-3.5 h-3.5"/></button>

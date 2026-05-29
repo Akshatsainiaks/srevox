@@ -128,7 +128,7 @@ export default function DashboardPage() {
           ) : (
             <div className="divide-y divide-gray-50 dark:divide-slate-800/60">
               {incidents.map((inc) => (
-                <Link key={inc.id} href={`/dashboard/incidents/${inc.id}`}
+                <Link key={inc.incident_id} href={`/dashboard/incidents/${inc.incident_id}`}
                   className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors group">
                   <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${severityDot(inc.severity)}`} />
                   <div className="flex-1 min-w-0">
@@ -170,7 +170,7 @@ export default function DashboardPage() {
             ) : (
               <div className="divide-y divide-gray-50 dark:divide-slate-800/60">
                 {clusters.map((cl) => (
-                  <div key={cl.id} className="px-5 py-3 flex items-center gap-3">
+                  <div key={cl.cluster_id} className="px-5 py-3 flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full shrink-0 ${cl.status === "connected" ? "bg-green-500" : cl.status === "error" ? "bg-red-500" : "bg-amber-500"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">{cl.name}</div>

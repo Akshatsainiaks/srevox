@@ -97,12 +97,12 @@ export default async function preferencesRoutes(app: FastifyInstance) {
 
     const prefs = await sql`
       SELECT
-        u.id, u.email, u.full_name, u.role,
+        u.user_id, u.email, u.full_name, u.role,
         p.severities, p.crash_reasons, p.namespaces,
         p.quiet_hours_start, p.quiet_hours_end,
         p.notify_resolved, p.notify_acknowledged, p.enabled
       FROM users u
-      LEFT JOIN user_alert_preferences p ON u.id = p.user_id
+      LEFT JOIN user_alert_preferences p ON u.user_id = p.user_id
       WHERE u.org_id = ${org_id}
       ORDER BY u.created_at ASC
     `;

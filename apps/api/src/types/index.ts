@@ -1,4 +1,4 @@
-export const DEFAULT_ORG = "00000000-0000-0000-0000-000000000001";
+export const DEFAULT_ORG = "orgjncj44t4hb4";
 
 export type Severity = "info" | "warning" | "critical";
 export type IncidentStatus = "open" | "acknowledged" | "resolved";

@@ -7,7 +7,7 @@ export type ClusterStatus  = "pending" | "connected" | "error" | "disconnected";
 export type ChannelType    = "email" | "teams" | "whatsapp" | "webhook" | "slack";
 
 export interface Incident {
-  id: string; cluster_id: string; cluster_name?: string;
+  incident_id: string; cluster_id: string; cluster_name?: string;
   pod_name: string; namespace: string; container_name?: string;
   crash_reason: string; restart_count: number; exit_code?: number;
   severity: Severity; status: IncidentStatus;
@@ -23,7 +23,7 @@ export interface AIDiagnosis {
 }
 
 export interface Cluster {
-  id: string; name: string; connection_type: string;
+  cluster_id: string; name: string; connection_type: string;
   cloud_provider?: string; k8s_version?: string;
   status: ClusterStatus; last_seen_at?: string;
   error_message?: string; created_at: string;
@@ -31,13 +31,13 @@ export interface Cluster {
 }
 
 export interface Channel {
-  id: string; name: string; type: ChannelType;
+  channel_id: string; name: string; type: ChannelType;
   enabled: boolean; last_success_at?: string;
   last_error?: string; created_at: string;
 }
 
 export interface AlertRule {
-  id: string; cluster_id: string; cluster_name?: string; name: string;
+  rule_id: string; cluster_id: string; cluster_name?: string; name: string;
   description?: string; namespaces: string[]; crash_reasons: string[];
   min_restarts: number; cooldown_minutes: number;
   severity: Severity; channel_ids: string[];

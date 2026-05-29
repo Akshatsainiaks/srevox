@@ -15,7 +15,7 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
     const rules = await sql`
       SELECT ar.*, c.name as cluster_name
       FROM alert_rules ar
-      LEFT JOIN clusters c ON ar.cluster_id = c.id
+      LEFT JOIN clusters c ON ar.cluster_id = c.cluster_id
       WHERE ar.org_id = ${org_id}
       ORDER BY ar.created_at DESC
     `;
@@ -46,21 +46,21 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
 
     // Verify cluster belongs to this org
     const [cluster] = await sql`
-      SELECT id FROM clusters WHERE id = ${cluster_id} AND org_id = ${org_id}
+      SELECT cluster_id FROM clusters WHERE cluster_id = ${cluster_id} AND org_id = ${org_id}
     `;
     if (!cluster) return reply.status(404).send({ detail: "Cluster not found in your organization" });
 
     const id = genId("arl");
     await sql`
       INSERT INTO alert_rules
-        (id, org_id, cluster_id, name, description, namespaces,
+        (rule_id, org_id, cluster_id, name, description, namespaces,
          crash_reasons, min_restarts, cooldown_minutes, severity, channel_ids)
       VALUES
         (${id}, ${org_id}, ${cluster_id}, ${name}, ${description},
          ${JSON.stringify(namespaces)}, ${JSON.stringify(crash_reasons || CRASH_REASONS)},
          ${min_restarts}, ${cooldown_minutes}, ${severity}, ${JSON.stringify(channel_ids)})
     `;
-    return { id, name, severity };
+    return { rule_id: id, name, severity };
   });
 
   // PATCH /api/alert-rules/:id/toggle — member+
@@ -69,7 +69,7 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
-    await sql`UPDATE alert_rules SET enabled = NOT enabled WHERE id = ${id} AND org_id = ${org_id}`;
+    await sql`UPDATE alert_rules SET enabled = NOT enabled WHERE rule_id = ${id} AND org_id = ${org_id}`;
     return { message: "Toggled" };
   });
 
@@ -81,12 +81,12 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    if (body.name)             await sql`UPDATE alert_rules SET name = ${body.name as string} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (body.min_restarts)     await sql`UPDATE alert_rules SET min_restarts = ${body.min_restarts as number} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (body.cooldown_minutes) await sql`UPDATE alert_rules SET cooldown_minutes = ${body.cooldown_minutes as number} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (body.severity)         await sql`UPDATE alert_rules SET severity = ${body.severity as string} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (body.channel_ids)      await sql`UPDATE alert_rules SET channel_ids = ${JSON.stringify(body.channel_ids)} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (body.namespaces)       await sql`UPDATE alert_rules SET namespaces = ${JSON.stringify(body.namespaces)} WHERE id = ${id} AND org_id = ${org_id}`;
+    if (body.name)             await sql`UPDATE alert_rules SET name = ${body.name as string} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.min_restarts)     await sql`UPDATE alert_rules SET min_restarts = ${body.min_restarts as number} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.cooldown_minutes) await sql`UPDATE alert_rules SET cooldown_minutes = ${body.cooldown_minutes as number} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.severity)         await sql`UPDATE alert_rules SET severity = ${body.severity as string} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.channel_ids)      await sql`UPDATE alert_rules SET channel_ids = ${JSON.stringify(body.channel_ids)} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.namespaces)       await sql`UPDATE alert_rules SET namespaces = ${JSON.stringify(body.namespaces)} WHERE rule_id = ${id} AND org_id = ${org_id}`;
 
     return { message: "Updated" };
   });
@@ -98,7 +98,7 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
     await sql`UPDATE incidents SET rule_id = NULL WHERE rule_id = ${id}`;
-    await sql`DELETE FROM alert_rules WHERE id = ${id} AND org_id = ${org_id}`;
+    await sql`DELETE FROM alert_rules WHERE rule_id = ${id} AND org_id = ${org_id}`;
     return { message: "Deleted" };
   });
 }

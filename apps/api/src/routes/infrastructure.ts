@@ -11,7 +11,7 @@ async function getK8sClient(clusterId: string) {
   if (clients.has(clusterId)) return clients.get(clusterId)!;
 
   const [cluster] = await sql`
-    SELECT connection_type, kubeconfig_encrypted FROM clusters WHERE id = ${clusterId}
+    SELECT connection_type, kubeconfig_encrypted FROM clusters WHERE cluster_id = ${clusterId}
   `;
   if (!cluster) throw new Error("Cluster not found");
 
@@ -39,20 +39,6 @@ function parseQuantity(q: string | undefined): number {
   return parseFloat(q);
 }
 
-// ── DB table for resource alerts ──────────────────────────────────────────────
-// CREATE TABLE IF NOT EXISTS resource_alerts (
-//   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//   org_id UUID NOT NULL REFERENCES organizations(id),
-//   cluster_id UUID NOT NULL REFERENCES clusters(id),
-//   resource_type TEXT NOT NULL, -- cpu, memory, pod_restarts
-//   threshold_pct INT NOT NULL,
-//   target TEXT NOT NULL, -- node, pod, namespace
-//   target_name TEXT,
-//   severity TEXT NOT NULL DEFAULT 'warning',
-//   enabled BOOLEAN DEFAULT true,
-//   created_at TIMESTAMPTZ DEFAULT now()
-// );
-
 export default async function infrastructureRoutes(app: FastifyInstance) {
 
   // GET /api/infrastructure/:clusterId/nodes
@@ -61,7 +47,7 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
     const { clusterId } = req.params as { clusterId: string };
 
     // Verify cluster belongs to org
-    const [cluster] = await sql`SELECT id FROM clusters WHERE id = ${clusterId} AND org_id = ${org_id}`;
+    const [cluster] = await sql`SELECT cluster_id FROM clusters WHERE cluster_id = ${clusterId} AND org_id = ${org_id}`;
     if (!cluster) return reply.status(404).send({ detail: "Cluster not found" });
 
     try {
@@ -127,7 +113,7 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
     const { org_id } = getUser(req);
     const { clusterId } = req.params as { clusterId: string };
 
-    const [cluster] = await sql`SELECT id FROM clusters WHERE id = ${clusterId} AND org_id = ${org_id}`;
+    const [cluster] = await sql`SELECT cluster_id FROM clusters WHERE cluster_id = ${clusterId} AND org_id = ${org_id}`;
     if (!cluster) return reply.status(404).send({ detail: "Cluster not found" });
 
     try {
@@ -201,7 +187,7 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
 
     const id = genId("ral");
     const [alert] = await sql`
-      INSERT INTO resource_alerts (id, org_id, cluster_id, resource_type, threshold_pct, target, target_name, severity)
+      INSERT INTO resource_alerts (resource_alert_id, org_id, cluster_id, resource_type, threshold_pct, target, target_name, severity)
       VALUES (${id}, ${org_id}, ${cluster_id}, ${resource_type}, ${threshold_pct}, ${target}, ${target_name || null}, ${severity})
       RETURNING *
     `;
@@ -212,7 +198,7 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
   app.delete("/../../resource-alerts/:id", { onRequest: [(app as any).authenticate] }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
-    await sql`DELETE FROM resource_alerts WHERE id = ${id} AND org_id = ${org_id}`;
+    await sql`DELETE FROM resource_alerts WHERE resource_alert_id = ${id} AND org_id = ${org_id}`;
     return { message: "Deleted" };
   });
 }

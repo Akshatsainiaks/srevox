@@ -261,7 +261,7 @@ export default function IncidentsPage() {
         ) : (
           <div className="divide-y divide-gray-50 dark:divide-slate-800">
             {paginatedIncidents.map((inc) => (
-              <Link key={inc.id} href={`/dashboard/incidents/${inc.id}`}
+              <Link key={inc.incident_id} href={`/dashboard/incidents/${inc.incident_id}`}
                 className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group">
                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${severityDot(inc.severity)}`} />
                 <div className="flex-1 min-w-0">

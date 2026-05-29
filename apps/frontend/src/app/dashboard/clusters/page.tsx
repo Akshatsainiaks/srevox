@@ -22,7 +22,8 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
   const [kubeconfig, setKube] = useState("");
   const [result, setResult] = useState<Cluster|null>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState(false);
   const { success, error } = useToast();
 
   const submit = async () => {
@@ -36,7 +37,8 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
     finally { setLoading(false); }
   };
 
-  const copy = (text: string) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2000); };
+  const copyId = (text: string) => { navigator.clipboard.writeText(text); setCopiedId(true); setTimeout(()=>setCopiedId(false),2000); };
+  const copyCmd = (text: string) => { navigator.clipboard.writeText(text); setCopiedCmd(true); setTimeout(()=>setCopiedCmd(false),2000); };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -53,24 +55,26 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
             <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-100 dark:border-green-500/20">
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
               <div>
-  <p className="font-semibold text-green-800 dark:text-green-300">Cluster added!</p>
-  <p className="text-sm text-green-600 dark:text-green-500 mt-0.5">Cluster ID:</p>
-  <div className="flex items-center gap-2 mt-1">
-    <span className="font-mono text-sm bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">{result.id}</span>
-    <button onClick={() => { navigator.clipboard.writeText(result.id); }}
-      className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
-      Copy
-    </button>
-  </div>
-</div>
+                <p className="font-semibold text-green-800 dark:text-green-300 mb-1">Cluster added!</p>
+                <div className="flex items-center gap-2 flex-wrap text-sm text-green-600 dark:text-green-500">
+                  <span>Cluster ID:</span>
+                  <span className="font-mono bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-lg select-all text-green-800 dark:text-green-300">{result.cluster_id}</span>
+                  <button onClick={() => copyId(result.cluster_id)}
+                    className="p-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-all shrink-0 shadow-sm"
+                    title="Copy Cluster ID"
+                  >
+                    {copiedId ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
             </div>
             {result.install_command && (
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Run inside your cluster:</p>
                 <div className="bg-gray-900 rounded-xl p-4 flex items-start gap-3">
                   <code className="text-green-400 text-xs font-mono break-all flex-1 leading-relaxed">{result.install_command}</code>
-                  <button onClick={() => copy(result.install_command!)} className="shrink-0 text-gray-500 hover:text-gray-300 transition-colors">
-                    {copied ? <CheckCircle className="w-4 h-4 text-green-400"/> : <Copy className="w-4 h-4"/>}
+                  <button onClick={() => copyCmd(result.install_command!)} className="shrink-0 text-gray-500 hover:text-gray-300 transition-colors">
+                    {copiedCmd ? <CheckCircle className="w-4 h-4 text-green-400"/> : <Copy className="w-4 h-4"/>}
                   </button>
                 </div>
               </div>
@@ -127,7 +131,7 @@ function EditModal({ cluster, onClose, onSaved }: { cluster: Cluster; onClose:()
   const save = async () => {
     setLoading(true);
     try {
-      await api.patch(`/api/clusters/${cluster.id}`, { name });
+      await api.patch(`/api/clusters/${cluster.cluster_id}`, { name });
       success("Cluster updated", `Renamed to ${name}`);
       onSaved(); onClose();
     } catch { error("Failed to update cluster"); }
@@ -161,9 +165,17 @@ export default function ClustersPage() {
   const [loading,  setLoading]  = useState(true);
   const [showAdd,  setShowAdd]  = useState(false);
   const [editing,  setEditing]  = useState<Cluster|null>(null);
+  const [copiedClusterId, setCopiedClusterId] = useState<string|null>(null);
   const { success, error } = useToast();
   const { confirm } = useConfirm();
   const me = getUser();
+
+  const copyClusterId = (id: string, name: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedClusterId(id);
+    success("Copied Cluster ID", `${name} ID copied to clipboard`);
+    setTimeout(() => setCopiedClusterId(null), 2000);
+  };
 
   const load = () => {
     setLoading(true);
@@ -180,7 +192,7 @@ export default function ClustersPage() {
     });
     if (!confirmed) return;
     try {
-      await deleteCluster(cl.id);
+      await deleteCluster(cl.cluster_id);
       success("Cluster deleted", cl.name);
       load();
     } catch { error("Failed to delete cluster"); }
@@ -220,7 +232,7 @@ export default function ClustersPage() {
           {clusters.map(cl=>{
             const status = cl.status;
             return (
-              <div key={cl.id} className="card p-5 flex items-center gap-4 hover:shadow-md dark:hover:shadow-slate-900 transition-shadow">
+              <div key={cl.cluster_id} className="card p-5 flex items-center gap-4 hover:shadow-md dark:hover:shadow-slate-900 transition-shadow">
                 <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl flex items-center justify-center shrink-0">
                   <Server className="w-6 h-6 text-indigo-500 dark:text-indigo-400"/>
                 </div>
@@ -231,7 +243,16 @@ export default function ClustersPage() {
                   </div>
                   <div className="text-xs text-gray-400 dark:text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
                     <span>Added {timeAgo(cl.created_at)}</span>
-                    <span className="font-mono text-gray-300 dark:text-slate-600">{cl.id.slice(0,8)}...</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-gray-300 dark:text-slate-600" title={cl.cluster_id}>{cl.cluster_id.slice(0,8)}...</span>
+                      <button
+                        onClick={() => copyClusterId(cl.cluster_id, cl.name)}
+                        className="p-1 bg-white dark:bg-slate-800 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 rounded transition-all shadow-sm"
+                        title="Copy full Cluster ID"
+                      >
+                        {copiedClusterId === cl.cluster_id ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">

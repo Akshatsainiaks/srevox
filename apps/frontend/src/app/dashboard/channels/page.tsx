@@ -147,9 +147,9 @@ export default function ChannelsPage() {
           {channels.map((ch) => {
             const Icon = CHANNEL_ICONS[ch.type as ChannelType] || Bell;
             const colorClass = CHANNEL_COLORS[ch.type as ChannelType] || "bg-gray-100 text-gray-600";
-            const testRes = testResult[ch.id];
+            const testRes = testResult[ch.channel_id];
             return (
-              <div key={ch.id} className="card p-5 flex items-center gap-4">
+              <div key={ch.channel_id} className="card p-5 flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${colorClass}`}><Icon className="w-6 h-6" /></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -166,16 +166,16 @@ export default function ChannelsPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   {["member", "admin"].includes(me?.role || "") && (
                     <>
-                      <button onClick={() => test(ch.id)} disabled={testing === ch.id} className="btn-secondary text-xs py-1.5 px-3">
-                        {testing === ch.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : testRes === "ok" ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : testRes === "fail" ? <AlertCircle className="w-3.5 h-3.5 text-red-500" /> : "Test"}
+                      <button onClick={() => test(ch.channel_id)} disabled={testing === ch.channel_id} className="btn-secondary text-xs py-1.5 px-3">
+                        {testing === ch.channel_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : testRes === "ok" ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : testRes === "fail" ? <AlertCircle className="w-3.5 h-3.5 text-red-500" /> : "Test"}
                       </button>
-                      <button onClick={() => toggle(ch.id)} className={`relative w-10 rounded-full transition-colors ${ch.enabled ? "bg-indigo-600" : "bg-gray-200 dark:bg-slate-700"}`} style={{ height: "22px" }}>
+                      <button onClick={() => toggle(ch.channel_id)} className={`relative w-10 rounded-full transition-colors ${ch.enabled ? "bg-indigo-600" : "bg-gray-200 dark:bg-slate-700"}`} style={{ height: "22px" }}>
                         <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform" style={{ backgroundColor: "#ffffff", transform: ch.enabled ? "translateX(20px)" : "translateX(0px)" }} />
                       </button>
                     </>
                   )}
                   {me?.role === "admin" && (
-                    <button onClick={() => remove(ch.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => remove(ch.channel_id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
                   )}
                 </div>
               </div>

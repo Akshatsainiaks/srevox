@@ -13,7 +13,7 @@ export default async function userRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const users = await sql`
-      SELECT id, email, full_name, role, is_active, created_at, last_login_at
+      SELECT user_id, email, full_name, role, is_active, created_at, last_login_at
       FROM users
       WHERE org_id = ${org_id} AND is_active = true
       ORDER BY created_at ASC
@@ -41,14 +41,14 @@ export default async function userRoutes(app: FastifyInstance) {
     if (!["viewer", "member", "admin"].includes(role)) return reply.status(400).send({ detail: "Invalid role" });
 
     // Check if user already exists
-    const [existing] = await sql`SELECT id FROM users WHERE email = ${email}`;
+    const [existing] = await sql`SELECT user_id FROM users WHERE email = ${email}`;
     if (existing) return reply.status(409).send({ detail: "User already exists" });
 
     const userId = genId("usr");
     const hashed = await bcrypt.hash(password, 12);
 
     await sql`
-      INSERT INTO users (id, org_id, email, hashed_password, full_name, role)
+      INSERT INTO users (user_id, org_id, email, hashed_password, full_name, role)
       VALUES (${userId}, ${org_id}, ${email}, ${hashed}, ${full_name || ""}, ${role})
     `;
 
@@ -62,7 +62,7 @@ export default async function userRoutes(app: FastifyInstance) {
       if (typeof emailPreview === "string") preview_url = emailPreview;
     }
 
-    return { message: "User created successfully", id: userId, email, role, preview_url };
+    return { message: "User created successfully", user_id: userId, email, role, preview_url };
   });
 
   // POST /api/users/invite — admin only
@@ -78,13 +78,13 @@ export default async function userRoutes(app: FastifyInstance) {
 
     // Check if user already exists in org
     const [existing] = await sql`
-      SELECT id FROM users WHERE email = ${email} AND org_id = ${org_id}
+      SELECT user_id FROM users WHERE email = ${email} AND org_id = ${org_id}
     `;
     if (existing) return reply.status(409).send({ detail: "User already in your organization" });
 
     // Check if invitation already pending
     const [pendingInvite] = await sql`
-      SELECT id FROM invitations
+      SELECT invite_id FROM invitations
       WHERE email = ${email} AND org_id = ${org_id} AND accepted = false
         AND expires_at > now()
     `;
@@ -92,9 +92,9 @@ export default async function userRoutes(app: FastifyInstance) {
 
     const inviteId = genId("inv");
     const [invite] = await sql`
-      INSERT INTO invitations (id, org_id, email, role, invited_by)
+      INSERT INTO invitations (invite_id, org_id, email, role, invited_by)
       VALUES (${inviteId}, ${org_id}, ${email}, ${role}, ${sub})
-      RETURNING id, email, role, token, expires_at
+      RETURNING invite_id, email, role, token, expires_at
     `;
 
     // In production, send email with invite link
@@ -123,10 +123,10 @@ export default async function userRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const invitations = await sql`
-      SELECT i.id, i.email, i.role, i.accepted, i.expires_at, i.created_at,
+      SELECT i.invite_id, i.email, i.role, i.accepted, i.expires_at, i.created_at,
              u.full_name as invited_by_name
       FROM invitations i
-      LEFT JOIN users u ON i.invited_by = u.id
+      LEFT JOIN users u ON i.invited_by = u.user_id
       WHERE i.org_id = ${org_id}
       ORDER BY i.created_at DESC
     `;
@@ -139,7 +139,7 @@ export default async function userRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
-    await sql`DELETE FROM invitations WHERE id = ${id} AND org_id = ${org_id}`;
+    await sql`DELETE FROM invitations WHERE invite_id = ${id} AND org_id = ${org_id}`;
     return { message: "Invitation cancelled" };
   });
 
@@ -158,7 +158,7 @@ export default async function userRoutes(app: FastifyInstance) {
     if (!invite) return reply.status(400).send({ detail: "Invalid or expired invitation" });
 
     // Check if email already registered
-    const [existingUser] = await sql`SELECT id FROM users WHERE email = ${invite.email}`;
+    const [existingUser] = await sql`SELECT user_id FROM users WHERE email = ${invite.email}`;
     if (existingUser) return reply.status(409).send({ detail: "Email already registered" });
 
     if (!password || password.length < 8)
@@ -169,11 +169,11 @@ export default async function userRoutes(app: FastifyInstance) {
 
     await sql.begin(async (tx: any) => {
       await tx`
-        INSERT INTO users (id, org_id, email, hashed_password, full_name, role)
+        INSERT INTO users (user_id, org_id, email, hashed_password, full_name, role)
         VALUES (${userId}, ${invite.org_id}, ${invite.email}, ${hashed}, ${full_name || ""}, ${invite.role})
       `;
       await tx`
-        UPDATE invitations SET accepted = true WHERE id = ${invite.id}
+        UPDATE invitations SET accepted = true WHERE invite_id = ${invite.invite_id}
       `;
     });
 
@@ -186,7 +186,7 @@ export default async function userRoutes(app: FastifyInstance) {
     return {
       access_token: jwtToken,
       token_type: "bearer",
-      user: { id: userId, email: invite.email, full_name, role: invite.role },
+      user: { user_id: userId, email: invite.email, full_name, role: invite.role },
     };
   });
 
@@ -205,8 +205,8 @@ app.patch("/:id/role", {
   // Return the updated user so frontend can update localStorage immediately
   const [updated] = await sql`
     UPDATE users SET role = ${role}
-    WHERE id = ${id} AND org_id = ${org_id}
-    RETURNING id, email, full_name, role, org_id
+    WHERE user_id = ${id} AND org_id = ${org_id}
+    RETURNING user_id, email, full_name, role, org_id
   `;
   if (!updated) return reply.status(404).send({ detail: "User not found" });
 
@@ -224,7 +224,7 @@ app.patch("/:id/role", {
 
     await sql`
       UPDATE users SET is_active = false
-      WHERE id = ${id} AND org_id = ${org_id}
+      WHERE user_id = ${id} AND org_id = ${org_id}
     `;
     return { message: "User removed from organization" };
   });
@@ -242,7 +242,7 @@ app.patch("/:id/role", {
 
     const [user] = await sql`
       UPDATE users SET hashed_password = ${hashed}
-      WHERE id = ${id} AND org_id = ${org_id}
+      WHERE user_id = ${id} AND org_id = ${org_id}
       RETURNING email
     `;
 

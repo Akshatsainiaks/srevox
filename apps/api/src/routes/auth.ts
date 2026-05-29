@@ -18,7 +18,7 @@ export default async function authRoutes(app: FastifyInstance) {
     if (password.length < 8)
       return reply.status(400).send({ detail: "Password must be at least 8 characters" });
 
-    const [existing] = await sql`SELECT id FROM users WHERE email = ${email}`;
+    const [existing] = await sql`SELECT user_id FROM users WHERE email = ${email}`;
     if (existing) return reply.status(409).send({ detail: "Email already registered" });
 
     const userId = genId("usr");
@@ -28,11 +28,11 @@ export default async function authRoutes(app: FastifyInstance) {
 
     await sql.begin(async (tx: any) => {
       await tx`
-        INSERT INTO organizations (id, name, slug, plan)
+        INSERT INTO organizations (org_id, name, slug, plan)
         VALUES (${orgId}, ${org_name || "My Organization"}, ${slug}, 'free')
       `;
       await tx`
-        INSERT INTO users (id, org_id, email, hashed_password, full_name, role)
+        INSERT INTO users (user_id, org_id, email, hashed_password, full_name, role)
         VALUES (${userId}, ${orgId}, ${email}, ${hashed}, ${full_name || ""}, 'admin')
       `;
     });
@@ -46,7 +46,7 @@ export default async function authRoutes(app: FastifyInstance) {
     return {
       access_token: token,
       token_type: "bearer",
-      user: { id: userId, email, full_name: full_name || "", role: "admin", org_id: orgId },
+      user: { user_id: userId, email, full_name: full_name || "", role: "admin", org_id: orgId },
     };
   });
 
@@ -55,7 +55,7 @@ export default async function authRoutes(app: FastifyInstance) {
     const { username, password } = req.body as { username: string; password: string };
 
     const [user] = await sql`
-      SELECT id, org_id, email, hashed_password, full_name, role
+      SELECT user_id, org_id, email, hashed_password, full_name, role
       FROM users
       WHERE email = ${username} AND is_active = true
       LIMIT 1
@@ -64,18 +64,18 @@ export default async function authRoutes(app: FastifyInstance) {
     if (!user || !(await bcrypt.compare(password, user.hashed_password)))
       return reply.status(401).send({ detail: "Incorrect email or password" });
 
-    await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
+    await sql`UPDATE users SET last_login_at = now() WHERE user_id = ${user.user_id}`;
 
     const token = await reply.jwtSign(
-      { sub: user.id, org_id: user.org_id, role: user.role, email: user.email },
+      { sub: user.user_id, org_id: user.org_id, role: user.role, email: user.email },
       { expiresIn: "24h" }
     );
-    await setSession(token, { userId: user.id, orgId: user.org_id, role: user.role });
+    await setSession(token, { userId: user.user_id, orgId: user.org_id, role: user.role });
 
     return {
       access_token: token,
       token_type: "bearer",
-      user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, org_id: user.org_id },
+      user: { user_id: user.user_id, email: user.email, full_name: user.full_name, role: user.role, org_id: user.org_id },
     };
   });
 
@@ -90,15 +90,15 @@ export default async function authRoutes(app: FastifyInstance) {
   app.get("/me", { onRequest: [(app as any).authenticate] }, async (req, reply) => {
     const payload = req.user as { sub: string };
     const [user] = await sql`
-      SELECT id, org_id, email, full_name, role, personal_channel_id,
+      SELECT user_id, org_id, email, full_name, role, personal_channel_id,
              created_at, last_login_at
-      FROM users WHERE id = ${payload.sub}
+      FROM users WHERE user_id = ${payload.sub}
     `;
     if (!user) return reply.status(404).send({ detail: "User not found" });
 
     // Get org info
     const [org] = await sql`
-      SELECT id, name, slug, plan FROM organizations WHERE id = ${user.org_id}
+      SELECT org_id, name, slug, plan FROM organizations WHERE org_id = ${user.org_id}
     `;
 
     return { ...user, org };
@@ -119,20 +119,20 @@ export default async function authRoutes(app: FastifyInstance) {
       if (new_password.length < 8)
         return reply.status(400).send({ detail: "New password must be at least 8 characters" });
 
-      const [user] = await sql`SELECT hashed_password FROM users WHERE id = ${payload.sub}`;
+      const [user] = await sql`SELECT hashed_password FROM users WHERE user_id = ${payload.sub}`;
       if (!current_password || !(await bcrypt.compare(current_password, user.hashed_password)))
         return reply.status(400).send({ detail: "Current password is incorrect" });
 
       const hashed = await bcrypt.hash(new_password, 12);
-      await sql`UPDATE users SET hashed_password = ${hashed} WHERE id = ${payload.sub}`;
+      await sql`UPDATE users SET hashed_password = ${hashed} WHERE user_id = ${payload.sub}`;
     }
 
     if (full_name !== undefined) {
-      await sql`UPDATE users SET full_name = ${full_name} WHERE id = ${payload.sub}`;
+      await sql`UPDATE users SET full_name = ${full_name} WHERE user_id = ${payload.sub}`;
     }
 
     if (org_name !== undefined) {
-      const [org] = await sql`SELECT name FROM organizations WHERE id = ${payload.org_id}`;
+      const [org] = await sql`SELECT name FROM organizations WHERE org_id = ${payload.org_id}`;
       if (org && org.name !== org_name) {
         const [{ count }] = await sql`
           SELECT count(*) FROM activity_log 
@@ -144,7 +144,7 @@ export default async function authRoutes(app: FastifyInstance) {
           return reply.status(429).send({ detail: "Organization name can only be changed 2 times per month" });
         }
 
-        await sql`UPDATE organizations SET name = ${org_name} WHERE id = ${payload.org_id}`;
+        await sql`UPDATE organizations SET name = ${org_name} WHERE org_id = ${payload.org_id}`;
         
         await sql`
           INSERT INTO activity_log (org_id, user_id, action, metadata)
@@ -159,17 +159,17 @@ export default async function authRoutes(app: FastifyInstance) {
       const configEncrypted = encrypt(JSON.stringify(personal_channel.config));
 
       // Delete old personal channel if exists
-      const [existingUser] = await sql`SELECT personal_channel_id FROM users WHERE id = ${payload.sub}`;
+      const [existingUser] = await sql`SELECT personal_channel_id FROM users WHERE user_id = ${payload.sub}`;
       if (existingUser?.personal_channel_id) {
-        await sql`DELETE FROM channels WHERE id = ${existingUser.personal_channel_id}`;
+        await sql`DELETE FROM channels WHERE channel_id = ${existingUser.personal_channel_id}`;
       }
 
       await sql`
-        INSERT INTO channels (id, org_id, name, type, config_encrypted)
+        INSERT INTO channels (channel_id, org_id, name, type, config_encrypted)
         VALUES (${channelId}, ${payload.org_id}, ${personal_channel.name}, ${personal_channel.type}, ${configEncrypted})
       `;
       await sql`
-        UPDATE users SET personal_channel_id = ${channelId} WHERE id = ${payload.sub}
+        UPDATE users SET personal_channel_id = ${channelId} WHERE user_id = ${payload.sub}
       `;
       return { message: "Profile and personal channel updated", personal_channel_id: channelId };
     }
@@ -181,14 +181,14 @@ export default async function authRoutes(app: FastifyInstance) {
   app.get("/me/personal-channel", { onRequest: [(app as any).authenticate] }, async (req) => {
     const payload = req.user as { sub: string };
     const [user] = await sql`
-      SELECT personal_channel_id FROM users WHERE id = ${payload.sub}
+      SELECT personal_channel_id FROM users WHERE user_id = ${payload.sub}
     `;
 
     if (!user?.personal_channel_id) return { channel: null };
 
     const [channel] = await sql`
-      SELECT id, name, type, enabled, last_success_at, last_error
-      FROM channels WHERE id = ${user.personal_channel_id}
+      SELECT channel_id, name, type, enabled, last_success_at, last_error
+      FROM channels WHERE channel_id = ${user.personal_channel_id}
     `;
     return { channel: channel || null };
   });

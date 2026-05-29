@@ -10,7 +10,7 @@ export default async function clusterRoutes(app: FastifyInstance) {
   app.get("/", { onRequest: [(app as any).authenticate] }, async (req) => {
     const { org_id } = getUser(req);
     const clusters = await sql`
-      SELECT id, name, connection_type, cloud_provider, k8s_version,
+      SELECT cluster_id, name, connection_type, cloud_provider, k8s_version,
              status, last_seen_at, error_message, created_at
       FROM clusters
       WHERE org_id = ${org_id}
@@ -24,7 +24,7 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
     const [cluster] = await sql`
-      SELECT * FROM clusters WHERE id = ${id} AND org_id = ${org_id}
+      SELECT * FROM clusters WHERE cluster_id = ${id} AND org_id = ${org_id}
     `;
     if (!cluster) return reply.status(404).send({ detail: "Not found" });
     return cluster;
@@ -38,22 +38,22 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { name, connection_type, kubeconfig, api_server_url, cloud_provider, k8s_version } =
       req.body as any;
 
-    const id          = genId("cls");
+    const clusterId   = genId("cls");
     const agent_token = connection_type === "agent" ? genId("agt") : null;
 
     await sql`
       INSERT INTO clusters
-        (id, org_id, name, connection_type, agent_token, api_server_url,
+        (cluster_id, org_id, name, connection_type, agent_token, api_server_url,
          cloud_provider, k8s_version, status)
       VALUES
-        (${id}, ${org_id}, ${name}, ${connection_type}, ${agent_token},
+        (${clusterId}, ${org_id}, ${name}, ${connection_type}, ${agent_token},
          ${api_server_url || null}, ${cloud_provider || "other"},
          ${k8s_version || null}, 'pending')
     `;
 
     await invalidateCache(`clusters:${org_id}`);
     return {
-      id, name, connection_type, agent_token, status: "pending",
+      cluster_id: clusterId, name, connection_type, agent_token, status: "pending",
       install_command: agent_token
         ? `kubectl apply -f https://app.srevox.io/agent.yaml?token=${agent_token}`
         : null,
@@ -68,9 +68,9 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const { name, cloud_provider, k8s_version } = req.body as any;
 
-    if (name)           await sql`UPDATE clusters SET name = ${name} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (cloud_provider) await sql`UPDATE clusters SET cloud_provider = ${cloud_provider} WHERE id = ${id} AND org_id = ${org_id}`;
-    if (k8s_version)    await sql`UPDATE clusters SET k8s_version = ${k8s_version} WHERE id = ${id} AND org_id = ${org_id}`;
+    if (name)           await sql`UPDATE clusters SET name = ${name} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (cloud_provider) await sql`UPDATE clusters SET cloud_provider = ${cloud_provider} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (k8s_version)    await sql`UPDATE clusters SET k8s_version = ${k8s_version} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
 
     await invalidateCache(`clusters:${org_id}`);
     return { message: "Updated" };
@@ -82,7 +82,7 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { status, k8s_version, error_message, agent_token } = req.body as any;
 
     // Verify agent token
-    const [cluster] = await sql`SELECT id FROM clusters WHERE id = ${id} AND agent_token = ${agent_token || ""}`;
+    const [cluster] = await sql`SELECT cluster_id FROM clusters WHERE cluster_id = ${id} AND agent_token = ${agent_token || ""}`;
     if (!cluster) return { message: "Invalid token" };
 
     await sql`
@@ -91,7 +91,7 @@ export default async function clusterRoutes(app: FastifyInstance) {
           last_seen_at = now(),
           k8s_version = COALESCE(${k8s_version || null}, k8s_version),
           error_message = ${error_message || null}
-      WHERE id = ${id}
+      WHERE cluster_id = ${id}
     `;
     return { message: "Heartbeat recorded" };
   });
@@ -104,7 +104,7 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     await sql`UPDATE incidents SET cluster_id = NULL, rule_id = NULL WHERE cluster_id = ${id}`;
     await sql`DELETE FROM alert_rules WHERE cluster_id = ${id}`;
-    await sql`DELETE FROM clusters WHERE id = ${id} AND org_id = ${org_id}`;
+    await sql`DELETE FROM clusters WHERE cluster_id = ${id} AND org_id = ${org_id}`;
     await invalidateCache(`clusters:${org_id}`);
     return { message: "Removed" };
   });
