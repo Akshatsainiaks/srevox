@@ -72,3 +72,35 @@ export function severityDot(s: Severity) {
 export function clusterStatusColor(s: string) {
   return { connected: "text-green-600", pending: "text-amber-500", error: "text-red-600", disconnected: "text-gray-400" }[s] || "text-gray-500";
 }
+
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn("navigator.clipboard.writeText failed, trying fallback", err);
+    }
+  }
+
+  // Fallback
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error("Fallback copy to clipboard failed", err);
+    return false;
+  }
+}
+

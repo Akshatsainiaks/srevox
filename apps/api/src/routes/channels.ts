@@ -60,14 +60,14 @@ export default async function channelRoutes(app: FastifyInstance) {
 
     try {
       const res = await axios.post(
-          `${process.env.ALERT_WORKER_URL || "http://srevox-worker:3001"}/test`,
+          `${process.env.ALERT_WORKER_URL || "http://localhost:3001"}/test`,
           { type: channel.type, config, test_message: { pod_name: "test-pod-srevox", namespace: "production", crash_reason: "OOMKilled", severity: "critical" } },
           { timeout: 15000 }
       );
       await sql`UPDATE channels SET last_success_at = now(), last_error = null WHERE channel_id = ${id}`;
       return { message: "Test sent", result: res.data };
     } catch (err: any) {
-      const msg = err.message;
+      const msg = err.response?.data?.error || err.response?.data?.detail || err.message;
       await sql`UPDATE channels SET last_error = ${msg} WHERE channel_id = ${id}`;
       return reply.status(502).send({ detail: `Test failed: ${msg}` });
     }

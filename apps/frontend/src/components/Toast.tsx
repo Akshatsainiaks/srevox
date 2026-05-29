@@ -3,8 +3,8 @@ import { createContext, useContext, useState, useCallback } from "react";
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from "lucide-react";
 
 type ToastType = "success" | "error" | "warning" | "info";
-interface Toast { id: string; type: ToastType; title: string; message?: string; duration?: number; }
-interface ToastCtx { success: (t: string, m?: string) => void; error: (t: string, m?: string) => void; warning: (t: string, m?: string) => void; info: (t: string, m?: string) => void; }
+interface Toast { id: string; type: ToastType; title: string; message?: React.ReactNode; duration?: number; }
+interface ToastCtx { success: (t: string, m?: React.ReactNode) => void; error: (t: string, m?: React.ReactNode) => void; warning: (t: string, m?: React.ReactNode) => void; info: (t: string, m?: React.ReactNode) => void; }
 
 const ToastContext = createContext<ToastCtx>({ success:()=>{}, error:()=>{}, warning:()=>{}, info:()=>{} });
 export const useToast = () => useContext(ToastContext);
@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const dismiss = useCallback((id: string) => setToasts(p => p.filter(t => t.id !== id)), []);
 
-  const add = useCallback((type: ToastType, title: string, message?: string, duration = 4000) => {
+  const add = useCallback((type: ToastType, title: string, message?: React.ReactNode, duration = 4000) => {
     const id = Math.random().toString(36).slice(2);
     setToasts(p => [...p, { id, type, title, message, duration }]);
     setTimeout(() => dismiss(id), duration);

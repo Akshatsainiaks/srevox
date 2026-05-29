@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
 import { getUser } from "@/lib/auth";
+import { copyToClipboard } from "@/lib/utils";
 
 interface Incident {
   id: string; pod_name: string; namespace: string; container_name?: string;
@@ -51,7 +52,7 @@ function Code({ code }: { code: string }) {
   return (
     <div className="relative group my-2">
       <pre className="bg-gray-900 text-green-400 text-xs font-mono rounded-xl px-4 py-3 overflow-x-auto leading-relaxed">{code}</pre>
-      <button onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(()=>setCopied(false),2000); }}
+      <button onClick={async () => { await copyToClipboard(code); setCopied(true); setTimeout(()=>setCopied(false),2000); }}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-xs bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded-lg transition-all">
         {copied ? "✓" : "Copy"}
       </button>
@@ -99,7 +100,14 @@ export default function IncidentDetailPage() {
       const r = await api.post(`/api/incidents/${id}/diagnose`);
       setIncident(p => p ? { ...p, ai_diagnosis: r.data.diagnosis } : p);
       success("AI diagnosis complete!");
-    } catch { toastError("AI diagnosis failed", "Make sure AI service is running on port 8000"); }
+    } catch {
+      toastError(
+        "AI diagnosis failed",
+        <span>
+          Make sure the AI service is running. If self-hosting, ensure <code>AI_SERVICE_URL</code> is set correctly in your <code>.env</code> file, or configure your keys in <Link href="/dashboard/settings" className="underline font-semibold hover:text-indigo-600 dark:hover:text-indigo-400">Settings</Link>.
+        </span>
+      );
+    }
     finally { setDiagLoading(false); }
   };
 

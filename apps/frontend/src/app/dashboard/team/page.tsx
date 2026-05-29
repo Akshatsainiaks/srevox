@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
+import { copyToClipboard } from "@/lib/utils";
 
 interface Member { user_id: string; email: string; full_name?: string; role: string; is_active: boolean; created_at: string; last_login_at?: string; }
 
@@ -39,7 +40,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
   const { success, error } = useToast();
   const set = (k:string,v:string) => setForm(p=>({...p,[k]:v}));
 
-  const copyPass = () => { navigator.clipboard.writeText(generatedPass); setCopied(true); setTimeout(()=>setCopied(false),2000); };
+  const copyPass = async () => { await copyToClipboard(generatedPass); setCopied(true); setTimeout(()=>setCopied(false),2000); };
   const regen = () => setGeneratedPass(generatePassword());
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 

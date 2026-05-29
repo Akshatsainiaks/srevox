@@ -4,6 +4,7 @@ import { SrevoxLogo } from "@/components/Logo";
 import { useState, useEffect, useRef } from "react";
 import { BookOpen, ChevronRight, Search, Server, Bell, Shield, Terminal, Code, Sun, Moon, Menu, X, Zap, Copy, Check, Radio, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { copyToClipboard } from "@/lib/utils";
 
 
 // Docs uses its OWN theme key — never touches dashboard theme
@@ -87,7 +88,7 @@ function CodeBlock({ code, dark: d }: { code: string; dark: boolean }) {
     <div className={`relative rounded-2xl overflow-hidden border my-4 ${d ? "bg-[#0d1117] border-slate-700" : "bg-gray-900 border-gray-800"}`}>
       <div className={`flex items-center gap-1.5 px-4 py-2.5 border-b ${d ? "border-slate-700" : "border-gray-800"}`}>
         <div className="w-3 h-3 rounded-full bg-red-500/60" /><div className="w-3 h-3 rounded-full bg-amber-500/60" /><div className="w-3 h-3 rounded-full bg-green-500/60" />
-        <button onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+        <button onClick={async () => { await copyToClipboard(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
           className="ml-auto text-xs text-slate-400 hover:text-white transition-colors px-2 py-0.5 rounded-lg hover:bg-white/10">
           {copied ? "Copied!" : "Copy"}
         </button>
@@ -421,7 +422,7 @@ Model: llama3`}/>
       <h1 className={h2}>Authentication</h1>
       <p className={p}>Srevox API uses JWT Bearer tokens. Get a token by logging in.</p>
       <CodeBlock dark={d} code={`# Login
-curl -X POST http://localhost:4000/api/auth/token \
+curl -X POST http://localhost:4000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@srevox.local","password":"admin123"}'
 

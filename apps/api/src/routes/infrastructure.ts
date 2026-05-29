@@ -58,6 +58,9 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
         metrics.getNodeMetrics(),
       ]);
 
+      // Successfully connected to cluster! Mark as connected
+      await sql`UPDATE clusters SET status = 'connected', last_seen_at = now() WHERE cluster_id = ${clusterId}`;
+
       const metricsMap = new Map(
         nodeMetricsRes.items.map((m: any) => [m.metadata.name, m.usage])
       );
@@ -123,6 +126,9 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
         core.listPodForAllNamespaces(),
         metrics.getPodMetrics(),
       ]);
+
+      // Successfully connected to cluster! Mark as connected
+      await sql`UPDATE clusters SET status = 'connected', last_seen_at = now() WHERE cluster_id = ${clusterId}`;
 
       const metricsMap = new Map(
         podMetricsRes.items.map((m: any) => [`${m.metadata.namespace}/${m.metadata.name}`, m.containers])

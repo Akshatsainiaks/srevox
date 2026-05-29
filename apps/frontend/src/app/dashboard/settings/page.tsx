@@ -25,10 +25,12 @@ const CHANNEL_FIELDS: Record<ChannelType, Array<{ key: string; label: string; pl
   teams:    [{ key: "webhook_url", label: "Teams webhook URL", placeholder: "https://company.webhook.office.com/..." }],
   whatsapp: [
     { key: "provider",    label: "Provider",    placeholder: "twilio" },
-    { key: "account_sid",label: "Account SID", placeholder: "ACxxxxxxxx" },
-    { key: "auth_token", label: "Auth token",  placeholder: "••••••••", secret: true },
-    { key: "from",       label: "From number", placeholder: "+14155238886" },
-    { key: "to",         label: "Your number", placeholder: "+919876543210" },
+    { key: "account_sid", label: "Account SID", placeholder: "ACxxxxxxxx" },
+    { key: "auth_token",  label: "Auth token",  placeholder: "••••••••", secret: true },
+    { key: "from",        label: "From number", placeholder: "+14155238886" },
+    { key: "phone_number_id", label: "Phone Number ID", placeholder: "10987654321" },
+    { key: "token",       label: "Meta Access Token", placeholder: "••••••••", secret: true },
+    { key: "to",          label: "Your number", placeholder: "+919876543210" },
   ],
   webhook: [
     { key: "url",    label: "Webhook URL",           placeholder: "https://hooks.slack.com/..." },
@@ -352,12 +354,28 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-            {CHANNEL_FIELDS[chType].map((f) => (
+            {CHANNEL_FIELDS[chType].filter((f) => {
+              if (chType !== "whatsapp") return true;
+              const prov = chConfig.provider || "twilio";
+              if (f.key === "provider" || f.key === "to") return true;
+              if (prov === "meta") {
+                return f.key === "phone_number_id" || f.key === "token";
+              } else {
+                return f.key === "account_sid" || f.key === "auth_token" || f.key === "from";
+              }
+            }).map((f) => (
               <div key={f.key}>
                 <label className="label">{f.label}</label>
-                <input type={f.secret ? "password" : "text"} className="input"
-                  placeholder={f.placeholder} value={chConfig[f.key] || ""}
-                  onChange={(e) => setChCfg(f.key, e.target.value)} />
+                {f.key === "provider" ? (
+                  <select className="input" value={chConfig[f.key] || "twilio"} onChange={(e) => setChCfg(f.key, e.target.value)}>
+                    <option value="twilio">Twilio</option>
+                    <option value="meta">Meta (WhatsApp Cloud API)</option>
+                  </select>
+                ) : (
+                  <input type={f.secret ? "password" : "text"} className="input"
+                    placeholder={f.placeholder} value={chConfig[f.key] || ""}
+                    onChange={(e) => setChCfg(f.key, e.target.value)} />
+                )}
               </div>
             ))}
             <div className="flex gap-3">

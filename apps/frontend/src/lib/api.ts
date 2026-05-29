@@ -31,7 +31,7 @@ api.interceptors.response.use(
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const apiLogin  = (email: string, password: string) =>
-  api.post("/api/auth/token",
+  api.post("/api/auth/login",
     new URLSearchParams({ username: email, password }),
     { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
   ).then(r => r.data);

@@ -30,6 +30,8 @@ const FIELDS: Record<ChannelType, Array<{ key: string; label: string; placeholde
     { key: "account_sid", label: "Account SID", placeholder: "ACxxxxxxxx" },
     { key: "auth_token", label: "Auth token", placeholder: "••••••••", secret: true },
     { key: "from", label: "From number", placeholder: "+14155238886" },
+    { key: "phone_number_id", label: "Phone Number ID", placeholder: "10987654321" },
+    { key: "token", label: "Meta Access Token", placeholder: "••••••••", secret: true },
     { key: "to", label: "To (comma-sep)", placeholder: "+919876543210" },
   ],
   webhook: [
@@ -79,11 +81,27 @@ function AddModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => vo
               })}
             </div>
           </div>
-          {name && FIELDS[type].map((f) => (
+          {name && FIELDS[type].filter((f) => {
+            if (type !== "whatsapp") return true;
+            const prov = cfg.provider || "twilio";
+            if (f.key === "provider" || f.key === "to") return true;
+            if (prov === "meta") {
+              return f.key === "phone_number_id" || f.key === "token";
+            } else {
+              return f.key === "account_sid" || f.key === "auth_token" || f.key === "from";
+            }
+          }).map((f) => (
             <div key={f.key}>
               <label className="label">{f.label}</label>
-              <input type={f.secret ? "password" : "text"} className="input" placeholder={f.placeholder}
-                value={cfg[f.key] || ""} onChange={(e) => set(f.key, e.target.value)} />
+              {f.key === "provider" ? (
+                <select className="input" value={cfg[f.key] || "twilio"} onChange={(e) => set(f.key, e.target.value)}>
+                  <option value="twilio">Twilio</option>
+                  <option value="meta">Meta (WhatsApp Cloud API)</option>
+                </select>
+              ) : (
+                <input type={f.secret ? "password" : "text"} className="input" placeholder={f.placeholder}
+                  value={cfg[f.key] || ""} onChange={(e) => set(f.key, e.target.value)} />
+              )}
               {f.hint && <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">{f.hint}</p>}
             </div>
           ))}

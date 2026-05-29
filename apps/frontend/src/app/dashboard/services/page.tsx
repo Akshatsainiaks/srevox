@@ -6,15 +6,15 @@ import { timeAgo } from "@/lib/utils";
 import { getUser } from "@/lib/auth";
 
 interface ServiceOwner {
-  id: string; cluster_id: string; cluster_name: string;
+  service_owner_id: string; cluster_id: string; cluster_name: string;
   namespace?: string; pod_prefix?: string;
   user_id: string; owner_name: string; owner_email: string;
   channel_ids: string[];
   created_at: string;
 }
-interface User    { id: string; email: string; full_name: string; role: string; }
-interface Cluster { id: string; name: string; }
-interface Channel { id: string; name: string; type: string; }
+interface User    { user_id: string; email: string; full_name: string; role: string; }
+interface Cluster { cluster_id: string; name: string; }
+interface Channel { channel_id: string; name: string; type: string; }
 
 function AddModal({
   clusters, users, channels, onClose, onAdded,
@@ -22,10 +22,10 @@ function AddModal({
   clusters: Cluster[]; users: User[]; channels: Channel[];
   onClose: () => void; onAdded: () => void;
 }) {
-  const [clusterId,    setClusterId]    = useState(clusters[0]?.id || "");
+  const [clusterId,    setClusterId]    = useState(clusters[0]?.cluster_id || "");
   const [namespace,    setNamespace]    = useState("");
   const [podPrefix,    setPodPrefix]    = useState("");
-  const [ownerUserId,  setOwnerUserId]  = useState(users[0]?.id || "");
+  const [ownerUserId,  setOwnerUserId]  = useState(users[0]?.user_id || "");
   const [selChannels,  setSelChannels]  = useState<string[]>([]);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState("");
@@ -74,7 +74,7 @@ function AddModal({
           <div>
             <label className="label">Cluster</label>
             <select className="input" value={clusterId} onChange={(e) => setClusterId(e.target.value)}>
-              {clusters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {clusters.map((c) => <option key={c.cluster_id} value={c.cluster_id}>{c.name}</option>)}
             </select>
           </div>
 
@@ -95,7 +95,7 @@ function AddModal({
             <label className="label">Owner (who to alert)</label>
             <select className="input" value={ownerUserId} onChange={(e) => setOwnerUserId(e.target.value)}>
               {users.map((u) => (
-                <option key={u.id} value={u.id}>
+                <option key={u.user_id} value={u.user_id}>
                   {u.full_name || u.email} ({u.role})
                 </option>
               ))}
@@ -107,11 +107,11 @@ function AddModal({
               <label className="label">Additional channels for this service</label>
               <div className="space-y-2 bg-gray-50 rounded-xl p-3">
                 {channels.map((ch) => (
-                  <label key={ch.id} className="flex items-center gap-3 cursor-pointer">
+                  <label key={ch.channel_id} className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={selChannels.includes(ch.id)}
-                      onChange={() => toggleCh(ch.id)}
+                      checked={selChannels.includes(ch.channel_id)}
+                      onChange={() => toggleCh(ch.channel_id)}
                       className="rounded"
                     />
                     <span className="text-sm text-gray-700">{ch.name}</span>
@@ -244,7 +244,7 @@ export default function ServicesPage() {
         ) : (
           <div className="divide-y divide-gray-50 dark:divide-slate-800">
             {owners.map((owner) => (
-              <div key={owner.id} className="px-5 py-4 flex items-start gap-4">
+              <div key={owner.service_owner_id} className="px-5 py-4 flex items-start gap-4">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
                   {(owner.owner_name || owner.owner_email)?.[0]?.toUpperCase()}
                 </div>
@@ -279,7 +279,7 @@ export default function ServicesPage() {
                 </div>
                 {me?.role === "admin" && (
                   <button
-                    onClick={() => remove(owner.id)}
+                    onClick={() => remove(owner.service_owner_id)}
                     className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />

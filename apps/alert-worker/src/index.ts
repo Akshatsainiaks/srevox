@@ -45,8 +45,13 @@ server.post("/test", async (req, reply) => {
   try {
     await dispatchAlert({ id: "test", type: type as any, config }, testEvent, "test-incident", "critical");
     return { success: true, message: "Test alert sent" };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed";
+  } catch (err: any) {
+    let msg = err.message || "Failed";
+    if (err.response?.data) {
+      msg = typeof err.response.data === "string" 
+        ? err.response.data 
+        : (err.response.data.detail || err.response.data.error || JSON.stringify(err.response.data));
+    }
     return reply.status(500).send({ success: false, error: msg });
   }
 });
@@ -76,6 +81,15 @@ async function main() {
 // ── Event pipeline ────────────────────────────────────────────────────────────
 async function processEvent(event: CrashEvent): Promise<void> {
   console.log(`[alert-worker] 🔔 ${event.pod_name} (${event.namespace}) — ${event.crash_reason} [${event.restart_count} restarts]`);
+
+  try {
+    await db.query(
+      `UPDATE clusters SET status = 'connected', last_seen_at = now() WHERE cluster_id = $1`,
+      [event.cluster_id]
+    );
+  } catch (err) {
+    console.error("[alert-worker] Failed to update cluster status:", err);
+  }
 
   const rules = await getMatchingRules(event);
   if (!rules.length) {
@@ -325,15 +339,26 @@ async function getChannels(channelIds: string[]): Promise<ChannelConfig[]> {
   });
 }
 
+function genId(prefix: string): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let randomPart = "";
+  for (let i = 0; i < 11; i++) {
+    randomPart += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `${prefix}${randomPart}`;
+}
+
 async function upsertIncident(event: CrashEvent, rule: any): Promise<string | null> {
   try {
+    const id = genId("inc");
     const { rows } = await db.query(
       `INSERT INTO incidents
          (incident_id, org_id, cluster_id, rule_id, pod_name, namespace, container_name,
           crash_reason, restart_count, exit_code, pod_labels, raw_event, severity)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING incident_id AS id`,
       [
+        id,
         rule.org_id, event.cluster_id, rule.id,
         event.pod_name, event.namespace, event.container_name,
         event.crash_reason, event.restart_count, event.exit_code || null,

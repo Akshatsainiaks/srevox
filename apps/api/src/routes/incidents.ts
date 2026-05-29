@@ -154,7 +154,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
   app.post("/:id/diagnose", {
     onRequest: [(app as any).authenticate, requireRole("member")],
   }, async (req, reply) => {
-    const { org_id } = getUser(req);
+    const { org_id, sub } = getUser(req);
     const { id } = req.params as { id: string };
     const [incident] = await sql`
       SELECT * FROM incidents WHERE incident_id = ${id} AND org_id = ${org_id}
@@ -162,14 +162,27 @@ export default async function incidentRoutes(app: FastifyInstance) {
     if (!incident) return reply.status(404).send({ detail: "Not found" });
     if (incident.ai_diagnosis) return { diagnosis: incident.ai_diagnosis, cached: true };
 
+    const [aiSettings] = await sql`
+      SELECT provider, model, api_key, ollama_url FROM ai_settings WHERE user_id = ${sub} LIMIT 1
+    `;
+
+    const body: Record<string, string> = {};
+    if (aiSettings) {
+      if (aiSettings.provider)   body.provider   = aiSettings.provider;
+      if (aiSettings.model)      body.model      = aiSettings.model;
+      if (aiSettings.api_key)    body.api_key    = aiSettings.api_key;
+      if (aiSettings.ollama_url) body.ollama_url = aiSettings.ollama_url;
+    }
+
     try {
       const res = await axios.post(
         `${process.env.AI_SERVICE_URL || "http://localhost:8000"}/api/diagnose/${id}`,
-        {}, { timeout: 60000 }
+        body, { timeout: 60000 }
       );
       return res.data;
     } catch (err: any) {
-      return reply.status(502).send({ detail: `AI service unavailable: ${err.message}` });
+      const msg = err.response?.data?.detail || err.response?.data?.error || err.message;
+      return reply.status(502).send({ detail: `AI service unavailable: ${msg}` });
     }
   });
 }

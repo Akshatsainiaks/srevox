@@ -50,8 +50,8 @@ export default async function authRoutes(app: FastifyInstance) {
     };
   });
 
-  // POST /api/auth/token — login
-  app.post("/token", async (req, reply) => {
+  // POST /api/auth/login — login
+  app.post("/login", async (req, reply) => {
     const { username, password } = req.body as { username: string; password: string };
 
     const [user] = await sql`

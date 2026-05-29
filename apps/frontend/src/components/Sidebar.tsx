@@ -109,7 +109,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     "relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300 group mb-1",
 
     // Always highlighted
-    "bg-gradient-to-r from-indigo-500/20 to-violet-500/10 border border-indigo-500/20 text-indigo-700 dark:text-white shadow-[0_0_25px_rgba(99,102,241,0.22)] hover:shadow-[0_0_35px_rgba(99,102,241,0.35)]",
+    "bg-gradient-to-r from-indigo-500/8 to-transparent border border-indigo-500/15 text-white hover:bg-[#172033]",
 
     collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
   )}
@@ -122,8 +122,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         Engineering
       </span>
 
-      {/* Pulse Dot */}
-      <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse shrink-0" />
     </>
   )}
 

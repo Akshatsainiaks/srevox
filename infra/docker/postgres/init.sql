@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS user_alert_preferences (
   notify_acknowledged BOOLEAN DEFAULT TRUE,
   enabled             BOOLEAN DEFAULT TRUE,
   created_at          TIMESTAMPTZ DEFAULT now(),
+  updated_at          TIMESTAMPTZ DEFAULT now(),
   UNIQUE(user_id)
 );
 

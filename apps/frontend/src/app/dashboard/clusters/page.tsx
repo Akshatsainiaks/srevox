@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Server, Plus, Trash2, Copy, CheckCircle, RefreshCw, Wifi, WifiOff, Clock, Pencil } from "lucide-react";
 import { fetchClusters, createCluster, deleteCluster, api } from "@/lib/api";
 import type { Cluster } from "@/lib/utils";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, copyToClipboard } from "@/lib/utils";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
 import { getUser } from "@/lib/auth";
@@ -37,8 +37,8 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
     finally { setLoading(false); }
   };
 
-  const copyId = (text: string) => { navigator.clipboard.writeText(text); setCopiedId(true); setTimeout(()=>setCopiedId(false),2000); };
-  const copyCmd = (text: string) => { navigator.clipboard.writeText(text); setCopiedCmd(true); setTimeout(()=>setCopiedCmd(false),2000); };
+  const copyId = async (text: string) => { await copyToClipboard(text); setCopiedId(true); setTimeout(()=>setCopiedId(false),2000); };
+  const copyCmd = async (text: string) => { await copyToClipboard(text); setCopiedCmd(true); setTimeout(()=>setCopiedCmd(false),2000); };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -170,8 +170,8 @@ export default function ClustersPage() {
   const { confirm } = useConfirm();
   const me = getUser();
 
-  const copyClusterId = (id: string, name: string) => {
-    navigator.clipboard.writeText(id);
+  const copyClusterId = async (id: string, name: string) => {
+    await copyToClipboard(id);
     setCopiedClusterId(id);
     success("Copied Cluster ID", `${name} ID copied to clipboard`);
     setTimeout(() => setCopiedClusterId(null), 2000);

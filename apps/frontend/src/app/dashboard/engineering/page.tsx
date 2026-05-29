@@ -3,19 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 
 const techStack = [
-  "Next.js",
-  "Fastify",
-  "Node.js",
-  "Go",
-  "Redis",
-  "PostgreSQL",
-  "Docker",
-  "Kubernetes",
-  "Tailwind CSS",
-  "Groq",
-  "OpenAI",
-  "Anthropic",
-  "Ollama",
+  { name: "Next.js", url: "https://nextjs.org" },
+  { name: "Fastify", url: "https://fastify.dev" },
+  { name: "Node.js", url: "https://nodejs.org" },
+  { name: "Go", url: "https://go.dev" },
+  { name: "Redis", url: "https://redis.io" },
+  { name: "PostgreSQL", url: "https://www.postgresql.org" },
+  { name: "Docker", url: "https://www.docker.com" },
+  { name: "Kubernetes", url: "https://kubernetes.io" },
+  { name: "Tailwind CSS", url: "https://tailwindcss.com" },
 ];
 
 const platformFeatures = [
@@ -354,12 +350,16 @@ export default function DeveloperPage() {
         <div className="flex flex-wrap gap-3">
 
           {techStack.map((tech) => (
-            <div
-              key={tech}
-              className="px-4 py-2 text-sm font-medium rounded-xl border border-indigo-200 dark:border-slate-700 bg-indigo-50 dark:bg-[#111827] text-indigo-700 dark:text-slate-200 transition"
+            <a
+              key={tech.name}
+              href={tech.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 text-sm font-medium rounded-xl border border-indigo-200 dark:border-slate-700 bg-indigo-50 dark:bg-[#111827] text-indigo-700 dark:text-slate-200 hover:bg-indigo-100 dark:hover:bg-slate-800 hover:text-indigo-800 dark:hover:text-white transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-1.5"
             >
-              {tech}
-            </div>
+              {tech.name}
+              <span className="text-[10px] opacity-60">↗</span>
+            </a>
           ))}
 
         </div>

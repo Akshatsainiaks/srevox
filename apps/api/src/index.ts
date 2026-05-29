@@ -115,6 +115,7 @@ async function runMigrations() {
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS notify_resolved BOOLEAN DEFAULT TRUE`;
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS notify_acknowledged BOOLEAN DEFAULT TRUE`;
     await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE user_alert_preferences ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now()`;
     await sql`
       CREATE TABLE IF NOT EXISTS resource_alerts (
         resource_alert_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -143,6 +144,7 @@ async function runMigrations() {
     await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES alert_rules(rule_id) ON DELETE SET NULL`;
     await sql`ALTER TABLE alerts_sent DROP CONSTRAINT IF EXISTS alerts_sent_channel_id_fkey`;
     await sql`ALTER TABLE alerts_sent ADD CONSTRAINT alerts_sent_channel_id_fkey FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE SET NULL`;
+
     console.log("✅ Migrations complete");
   } catch(e: any) {
     console.error("Migration error:", e.message);
@@ -165,21 +167,6 @@ async function seedDefaults() {
         ) ON CONFLICT DO NOTHING
       `;
       console.log("✅ Default admin: admin@srevox.local / admin123");
-    }
-    // Seed default catch-all alert rule
-    const [existingRule] = await sql`SELECT rule_id FROM alert_rules WHERE name = 'Default — All Crashes' LIMIT 1`;
-    if (!existingRule) {
-      await sql`
-        INSERT INTO alert_rules (rule_id, org_id, cluster_id, name, namespaces, crash_reasons, min_restarts, cooldown_minutes, severity, channel_ids, enabled)
-        VALUES (
-          'rulejncj44t4hb4',
-          'orgjncj44t4hb4',
-          NULL,
-          'Default — All Crashes',
-          '[]', '[]', 0, 5, 'warning', '[]', true
-        ) ON CONFLICT DO NOTHING
-      `;
-      console.log("✅ Default catch-all alert rule created");
     }
   } catch (err) {
     console.warn("[seed] skipped:", err);
