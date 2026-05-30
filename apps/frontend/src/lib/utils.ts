@@ -25,9 +25,18 @@ export interface AIDiagnosis {
 export interface Cluster {
   cluster_id: string; name: string; connection_type: string;
   cloud_provider?: string; k8s_version?: string;
+  open_incidents_count?: number;
   status: ClusterStatus; last_seen_at?: string;
   error_message?: string; created_at: string;
   agent_token?: string; install_command?: string;
+  node_cpu_threshold?: number;
+  node_memory_threshold?: number;
+  master_alerts_enabled?: boolean;
+  worker_alerts_enabled?: boolean;
+  master_nodes_ready?: number;
+  master_nodes_total?: number;
+  worker_nodes_ready?: number;
+  worker_nodes_total?: number;
 }
 
 export interface Channel {

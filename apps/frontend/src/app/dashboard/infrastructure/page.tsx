@@ -33,13 +33,13 @@ interface PodMetric {
 }
 
 interface ClusterInfo {
-  id: string;
+  cluster_id: string;
   name: string;
   status: string;
 }
 
 interface ResourceAlert {
-  id: string;
+  resource_alert_id: string;
   cluster_id: string;
   resource_type: "cpu" | "memory" | "pod_restarts";
   threshold_pct: number;
@@ -81,7 +81,7 @@ function MetricCard({ label, value, icon: Icon, color, sub }: { label: string; v
 }
 
 function AddAlertModal({ clusters, onClose, onSaved }: { clusters: ClusterInfo[]; onClose: () => void; onSaved: () => void }) {
-  const [clusterId, setClusterId] = useState(clusters[0]?.id || "");
+  const [clusterId, setClusterId] = useState(clusters[0]?.cluster_id || "");
   const [resourceType, setResourceType] = useState<"cpu" | "memory" | "pod_restarts">("cpu");
   const [threshold, setThreshold] = useState(80);
   const [target, setTarget] = useState<"node" | "pod" | "namespace">("node");
@@ -115,7 +115,7 @@ function AddAlertModal({ clusters, onClose, onSaved }: { clusters: ClusterInfo[]
           <div>
             <label className="label">Cluster</label>
             <select className="input" value={clusterId} onChange={e => setClusterId(e.target.value)}>
-              {clusters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {clusters.map(c => <option key={c.cluster_id} value={c.cluster_id}>{c.name}</option>)}
             </select>
           </div>
           <div>
@@ -198,7 +198,7 @@ export default function InfrastructurePage() {
     const r = await api.get("/api/clusters");
     const cls = r.data.clusters || [];
     setClusters(cls);
-    if (cls.length > 0) setSelected(cls[0].id);
+    if (cls.length > 0) setSelected(cls[0].cluster_id);
   };
 
   const loadMetrics = useCallback(async (clusterId: string) => {
@@ -244,7 +244,7 @@ export default function InfrastructurePage() {
         </div>
         <div className="flex items-center gap-3">
           <select className="input py-2 text-sm w-48" value={selectedCluster} onChange={e => setSelected(e.target.value)}>
-            {clusters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {clusters.map(c => <option key={c.cluster_id} value={c.cluster_id}>{c.name}</option>)}
           </select>
           <button onClick={() => loadMetrics(selectedCluster)} className="btn-secondary p-2.5">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -422,7 +422,7 @@ export default function InfrastructurePage() {
           </div>
           <div className="divide-y divide-gray-50 dark:divide-slate-800">
             {alerts.map(a => (
-              <div key={a.id} className="flex items-center gap-4 px-5 py-3">
+              <div key={a.resource_alert_id} className="flex items-center gap-4 px-5 py-3">
                 <div className="flex-1">
                   <div className="text-sm font-medium text-gray-800 dark:text-slate-200 capitalize">
                     {a.resource_type.replace("_", " ")} &gt; {a.threshold_pct}% on {a.target}
@@ -430,7 +430,7 @@ export default function InfrastructurePage() {
                   </div>
                   <div className="text-xs text-gray-400 dark:text-slate-500 capitalize">{a.severity} · {a.enabled ? "Active" : "Paused"}</div>
                 </div>
-                <button onClick={() => deleteAlert(a.id)} className="text-xs text-red-500 hover:text-red-700 transition-colors">Remove</button>
+                <button onClick={() => deleteAlert(a.resource_alert_id)} className="text-xs text-red-500 hover:text-red-700 transition-colors">Remove</button>
               </div>
             ))}
           </div>

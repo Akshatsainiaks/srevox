@@ -82,6 +82,8 @@ export default async function alertRuleRoutes(app: FastifyInstance) {
     const body = req.body as Record<string, unknown>;
 
     if (body.name)             await sql`UPDATE alert_rules SET name = ${body.name as string} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.cluster_id)       await sql`UPDATE alert_rules SET cluster_id = ${body.cluster_id as string} WHERE rule_id = ${id} AND org_id = ${org_id}`;
+    if (body.description !== undefined) await sql`UPDATE alert_rules SET description = ${body.description as string} WHERE rule_id = ${id} AND org_id = ${org_id}`;
     if (body.min_restarts)     await sql`UPDATE alert_rules SET min_restarts = ${body.min_restarts as number} WHERE rule_id = ${id} AND org_id = ${org_id}`;
     if (body.cooldown_minutes) await sql`UPDATE alert_rules SET cooldown_minutes = ${body.cooldown_minutes as number} WHERE rule_id = ${id} AND org_id = ${org_id}`;
     if (body.severity)         await sql`UPDATE alert_rules SET severity = ${body.severity as string} WHERE rule_id = ${id} AND org_id = ${org_id}`;

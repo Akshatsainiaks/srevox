@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, CheckCircle, AlertTriangle, Zap, Tag, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle, AlertTriangle, Zap, Tag, Loader2, Sparkles, RefreshCw, Server } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmModal";
@@ -177,6 +177,7 @@ export default function IncidentDetailPage() {
               <h2 className="font-bold text-gray-900 dark:text-white">Incident details</h2>
             </div>
             <Row label="Crash reason"  value={<span className="font-mono text-red-600 dark:text-red-400">{incident.crash_reason}</span>}/>
+            {incident.cluster_name && <Row label="Cluster" value={<span className="inline-flex items-center gap-1.5 text-indigo-500 dark:text-indigo-400 font-semibold"><Server className="w-3.5 h-3.5"/>{incident.cluster_name}</span>}/>}
             <Row label="Restart count" value={<span className="text-orange-600 dark:text-orange-400 font-bold">{incident.restart_count}</span>}/>
             <Row label="Namespace"     value={incident.namespace}/>
             {incident.container_name && <Row label="Container" value={<span className="font-mono">{incident.container_name}</span>}/>}

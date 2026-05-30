@@ -2,12 +2,13 @@
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Bell, LogOut, User, Crown, Shield, Eye, Sun, Moon, ExternalLink, SlidersHorizontal, CheckCheck, AlertTriangle, CheckCircle, Zap } from "lucide-react";
+import { Bell, LogOut, User, Crown, Shield, Eye, Sun, Moon, ExternalLink, SlidersHorizontal, CheckCheck, AlertTriangle, CheckCircle, Zap, LifeBuoy, Search, Loader2, Server, BookOpen } from "lucide-react";
 import { getUser, removeToken, AuthUser } from "@/lib/auth";
-import { apiLogout } from "@/lib/api";
+import { apiLogout, fetchIncidents, fetchClusters, fetchRules, fetchChannels } from "@/lib/api";
 import { useTheme } from "./ThemeProvider";
 import { useToast } from "./Toast";
 import { SrevoxWordmark } from "./Logo";
+
 
 const ROLE_ICONS: Record<string,React.ElementType> = { admin: Crown, member: Shield, viewer: Eye };
 const ROLE_COLORS: Record<string,string> = {
@@ -75,6 +76,62 @@ export default function Navbar() {
   const notifRef   = useRef<HTMLDivElement>(null);
   const RoleIcon = ROLE_ICONS[user?.role || "viewer"] || Shield;
 
+  // Global search state
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchData, setSearchData] = useState<{
+    incidents: any[];
+    clusters: any[];
+    rules: any[];
+    channels: any[];
+  }>({ incidents: [], clusters: [], rules: [], channels: [] });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const loadSearchData = async () => {
+    if (searchData.incidents.length > 0) return; // already loaded once
+    setSearchLoading(true);
+    try {
+      const [incRes, clRes, ruRes, chRes] = await Promise.all([
+        fetchIncidents().catch(() => ({ incidents: [] })),
+        fetchClusters().catch(() => ({ clusters: [] })),
+        fetchRules().catch(() => ({ rules: [] })),
+        fetchChannels().catch(() => ({ channels: [] })),
+      ]);
+      setSearchData({
+        incidents: incRes?.incidents || [],
+        clusters: clRes?.clusters || [],
+        rules: ruRes?.rules || [],
+        channels: chRes?.channels || [],
+      });
+    } catch (err) {
+      console.error("Failed to load search index", err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchFocused) {
+      loadSearchData();
+    }
+  }, [searchFocused]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "Escape") {
+        setSearchFocused(false);
+        searchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const loadNotifs = useCallback(async () => {
     const saved = new Set<string>(JSON.parse(localStorage.getItem("sv_read_notifs") || "[]"));
     setReadIds(saved);
@@ -88,6 +145,7 @@ export default function Navbar() {
     const h = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
       if (notifRef.current   && !notifRef.current.contains(e.target as Node))   setNotifOpen(false);
+      if (searchRef.current  && !searchRef.current.contains(e.target as Node))  setSearchFocused(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -108,6 +166,43 @@ export default function Navbar() {
     success("All caught up!", "All notifications marked as read");
   };
 
+  const query = searchQuery.trim().toLowerCase();
+
+  const filteredIncidents = query
+    ? searchData.incidents.filter((i: any) =>
+        (i.pod_name || "").toLowerCase().includes(query) ||
+        (i.namespace || "").toLowerCase().includes(query) ||
+        (i.crash_reason || "").toLowerCase().includes(query) ||
+        (i.cluster_name && i.cluster_name.toLowerCase().includes(query))
+      ).slice(0, 5)
+    : [];
+
+  const filteredClusters = query
+    ? searchData.clusters.filter((c: any) =>
+        (c.name || "").toLowerCase().includes(query)
+      ).slice(0, 3)
+    : [];
+
+  const filteredRules = query
+    ? searchData.rules.filter((r: any) =>
+        (r.name || "").toLowerCase().includes(query) ||
+        (r.description && r.description.toLowerCase().includes(query))
+      ).slice(0, 3)
+    : [];
+
+  const filteredChannels = query
+    ? searchData.channels.filter((c: any) =>
+        (c.name || "").toLowerCase().includes(query) ||
+        (c.type || "").toLowerCase().includes(query)
+      ).slice(0, 3)
+    : [];
+
+  const hasResults =
+    filteredIncidents.length > 0 ||
+    filteredClusters.length > 0 ||
+    filteredRules.length > 0 ||
+    filteredChannels.length > 0;
+
   const unread = notifs.filter(n => !n.read).length;
 
   const logout = async () => {
@@ -120,7 +215,198 @@ export default function Navbar() {
     <header className="h-14 bg-white dark:bg-[#151823] border-b border-gray-100 dark:border-slate-800 flex items-center px-5 sticky top-0 z-30 w-full">
       <Link href="/dashboard" className="mr-auto"><SrevoxWordmark size="md" /></Link>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
+        {/* Search */}
+        <div ref={searchRef} className="relative hidden md:block w-64 mr-2">
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search everything... (⌘K)"
+              value={searchQuery}
+              onFocus={() => setSearchFocused(true)}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-gray-50/85 dark:bg-slate-800/40 text-xs text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 rounded-xl pl-9 pr-3 py-1.5 border border-gray-100 dark:border-slate-800/60 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-550/30 transition-all"
+            />
+          </div>
+
+          {searchFocused && (
+            <div className="absolute right-0 top-full mt-2 w-[440px] bg-white dark:bg-[#1e2130] border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto">
+              {searchLoading && (
+                <div className="p-6 text-center text-xs text-gray-400 dark:text-slate-500 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                  Indexing Srevox resources...
+                </div>
+              )}
+
+              {!searchLoading && !query && (
+                <div className="p-3">
+                  <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-2 mb-1.5 text-left">
+                    Quick navigation
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-left">
+                    {[
+                      { href: "/dashboard", label: "Dashboard", desc: "Overview & metrics" },
+                      { href: "/dashboard/incidents", label: "Incidents", desc: "Active crash logs" },
+                      { href: "/dashboard/clusters", label: "Clusters", desc: "K8s connections" },
+                      { href: "/dashboard/rules", label: "Alert Rules", desc: "Thresholds & triggers" },
+                    ].map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setSearchFocused(false)}
+                        className="flex flex-col p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors border border-transparent hover:border-gray-100 dark:hover:border-slate-800"
+                      >
+                        <span className="text-xs font-semibold text-gray-800 dark:text-slate-200">{item.label}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-tight">{item.desc}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!searchLoading && query && hasResults && (
+                <div className="divide-y divide-gray-50 dark:divide-slate-800/40 text-left">
+                  {/* Incidents */}
+                  {filteredIncidents.length > 0 && (
+                    <div className="p-2">
+                      <div className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-2 mb-1">
+                        Incidents
+                      </div>
+                      {filteredIncidents.map((inc: any) => (
+                        <Link
+                          key={inc.id}
+                          href={`/dashboard/incidents/${inc.id}`}
+                          onClick={() => { setSearchFocused(false); setSearchQuery(""); }}
+                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${inc.severity === "critical" ? "bg-red-500 animate-pulse" : inc.severity === "warning" ? "bg-amber-500" : "bg-blue-500"}`} />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-gray-800 dark:text-slate-200 truncate">{inc.pod_name}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-slate-500 truncate mt-0.5">
+                              {inc.namespace} {inc.cluster_name ? `· ${inc.cluster_name}` : ""}
+                            </div>
+                          </div>
+                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border capitalize shrink-0 ${
+                            inc.status === "open" ? "bg-red-50/50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-500/20" :
+                            inc.status === "acknowledged" ? "bg-amber-50/50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20" :
+                            "bg-green-50/50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-500/20"
+                          }`}>{inc.status}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Clusters */}
+                  {filteredClusters.length > 0 && (
+                    <div className="p-2">
+                      <div className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-2 mb-1">
+                        Clusters
+                      </div>
+                      {filteredClusters.map((cl: any) => (
+                        <Link
+                          key={cl.cluster_id}
+                          href="/dashboard/clusters"
+                          onClick={() => { setSearchFocused(false); setSearchQuery(""); }}
+                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <Server className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-gray-800 dark:text-slate-200 truncate">{cl.name}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-slate-500 truncate mt-0.5">
+                              Status: {cl.status} {cl.provider ? `· ${cl.provider}` : ""}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Rules */}
+                  {filteredRules.length > 0 && (
+                    <div className="p-2">
+                      <div className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-2 mb-1">
+                        Alert Rules
+                      </div>
+                      {filteredRules.map((ru: any) => (
+                        <Link
+                          key={ru.rule_id}
+                          href="/dashboard/rules"
+                          onClick={() => { setSearchFocused(false); setSearchQuery(""); }}
+                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-gray-800 dark:text-slate-200 truncate">{ru.name}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-slate-500 truncate mt-0.5">
+                              {ru.description || "No description"}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Channels */}
+                  {filteredChannels.length > 0 && (
+                    <div className="p-2">
+                      <div className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-2 mb-1">
+                        Alert Channels
+                      </div>
+                      {filteredChannels.map((ch: any) => (
+                        <Link
+                          key={ch.channel_id}
+                          href="/dashboard/channels"
+                          onClick={() => { setSearchFocused(false); setSearchQuery(""); }}
+                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-gray-800 dark:text-slate-200 truncate">{ch.name}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-slate-500 truncate mt-0.5">
+                              Type: {ch.type} · {ch.enabled ? "Active" : "Disabled"}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!searchLoading && query && !hasResults && (
+                <div className="p-8 text-center">
+                  <AlertTriangle className="w-8 h-8 text-gray-300 dark:text-slate-700 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-gray-600 dark:text-slate-400">No results found</p>
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">No resources matched "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Troubleshooter */}
+        <div className="relative group">
+          <Link href="/dashboard/troubleshooter"
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors relative">
+            <LifeBuoy className="w-4 h-4 text-indigo-500 dark:text-indigo-400 animate-pulse" />
+          </Link>
+          
+          {/* Hover popup card */}
+          <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-[#1e2130] border border-gray-100 dark:border-slate-700 rounded-2xl shadow-xl p-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 transform translate-y-1 group-hover:translate-y-0">
+            <div className="flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
+                <LifeBuoy className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-gray-900 dark:text-white text-xs">Troubleshooter</div>
+                <div className="text-[10px] text-gray-400 dark:text-slate-500 leading-tight mt-0.5">Diagnose setup logs & cluster errors.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Bell */}
         <div ref={notifRef} className="relative">
           <button onClick={() => { setNotifOpen(o=>!o); setProfileOpen(false); }}

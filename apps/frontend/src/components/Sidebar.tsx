@@ -33,7 +33,6 @@ const NAV = [
   { href: "/dashboard/team",        label: "Team",           icon: Users },
   { href: "/dashboard/preferences", label: "My Preferences", icon: SlidersHorizontal },
   { href: "/dashboard/infrastructure", label: "Infrastructure", icon: Server },
-  
 ];
 
 interface SidebarProps {
@@ -109,7 +108,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     "relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300 group mb-1",
 
     // Always highlighted
-    "bg-gradient-to-r from-indigo-500/8 to-transparent border border-indigo-500/15 text-white hover:bg-[#172033]",
+    "bg-indigo-50/40 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 text-indigo-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-[#172033] hover:text-indigo-800 dark:hover:text-white",
 
     collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
   )}

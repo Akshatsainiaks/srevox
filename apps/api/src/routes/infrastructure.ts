@@ -3,32 +3,7 @@ import sql from "../db/sql.js";
 import { getUser } from "../middleware/rbac.js";
 import * as k8s from "@kubernetes/client-node";
 import { genId } from "../utils/id.js";
-
-// ── K8s client cache ──────────────────────────────────────────────────────────
-const clients = new Map<string, { core: k8s.CoreV1Api; metrics: k8s.Metrics }>();
-
-async function getK8sClient(clusterId: string) {
-  if (clients.has(clusterId)) return clients.get(clusterId)!;
-
-  const [cluster] = await sql`
-    SELECT connection_type, kubeconfig_encrypted FROM clusters WHERE cluster_id = ${clusterId}
-  `;
-  if (!cluster) throw new Error("Cluster not found");
-
-  const kc = new k8s.KubeConfig();
-  if (cluster.kubeconfig_encrypted) {
-    kc.loadFromString(cluster.kubeconfig_encrypted);
-  } else {
-    kc.loadFromDefault();
-  }
-
-  const client = {
-    core: kc.makeApiClient(k8s.CoreV1Api),
-    metrics: new k8s.Metrics(kc),
-  };
-  clients.set(clusterId, client);
-  return client;
-}
+import { getK8sClient } from "../services/k8s.js";
 
 function parseQuantity(q: string | undefined): number {
   if (!q) return 0;
@@ -102,6 +77,29 @@ export default async function infrastructureRoutes(app: FastifyInstance) {
           conditions: (node.status.conditions || []).map((c: any) => ({ type: c.type, status: c.status })),
         };
       });
+
+      let masterReady = 0, masterTotal = 0, workerReady = 0, workerTotal = 0;
+      nodes.forEach((n: any) => {
+        const isReady = n.status === "Ready";
+        if (n.role === "master") {
+          masterTotal++;
+          if (isReady) masterReady++;
+        } else {
+          workerTotal++;
+          if (isReady) workerReady++;
+        }
+      });
+
+      await sql`
+        UPDATE clusters
+        SET status = 'connected',
+            last_seen_at = now(),
+            master_nodes_ready = ${masterReady},
+            master_nodes_total = ${masterTotal},
+            worker_nodes_ready = ${workerReady},
+            worker_nodes_total = ${workerTotal}
+        WHERE cluster_id = ${clusterId}
+      `;
 
       return { nodes };
     } catch (err: any) {

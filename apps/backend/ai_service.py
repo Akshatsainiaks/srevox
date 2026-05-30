@@ -181,7 +181,7 @@ async def diagnose_incident(incident_id: str, config: DiagnoseRequest = None):
     db = await get_db_connection()
     try:
         incident = await db.fetchrow(
-            "SELECT * FROM incidents WHERE id = $1", incident_id
+            "SELECT * FROM incidents WHERE incident_id = $1", incident_id
         )
         if not incident:
             raise HTTPException(status_code=404, detail="Incident not found")
@@ -215,7 +215,7 @@ Please diagnose this crash and provide specific fix steps.
         await db.execute(
             """UPDATE incidents
                SET ai_diagnosis = $1, ai_diagnosed_at = now()
-               WHERE id = $2""",
+               WHERE incident_id = $2""",
             json.dumps(diagnosis),
             incident_id,
         )

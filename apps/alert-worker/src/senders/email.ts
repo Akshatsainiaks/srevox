@@ -11,7 +11,8 @@ export async function sendEmail(
   config: Record<string, string>,
   event: CrashEvent,
   incidentId: string,
-  severity: string
+  severity: string,
+  clusterName: string
 ): Promise<void> {
   const transporter = nodemailer.createTransport({
     host:   config.smtp_host || "smtp.gmail.com",
@@ -46,6 +47,7 @@ export async function sendEmail(
     <div style="padding:28px;">
       <table style="width:100%;border-collapse:collapse;">
         ${[
+          ["Cluster",    clusterName],
           ["Pod",        event.pod_name],
           ["Namespace",  event.namespace],
           ["Container",  event.container_name || "—"],
@@ -86,7 +88,7 @@ export async function sendEmail(
   await transporter.sendMail({
     from:    `"Srevox Alerts" <${config.from || config.smtp_user}>`,
     to:      recipients.join(", "),
-    subject: `[Srevox ${severity.toUpperCase()}] ${event.pod_name} crashed — ${event.crash_reason}`,
+    subject: `[Srevox ${severity.toUpperCase()}] ${event.pod_name} crashed on cluster ${clusterName} — ${event.crash_reason}`,
     html,
   });
 

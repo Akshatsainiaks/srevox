@@ -7,9 +7,10 @@ import "dotenv/config";
 import Redis from "ioredis";
 import { Pool } from "pg";
 import Fastify from "fastify";
+import { createDecipheriv, createHash } from "crypto";
 import type { CrashEvent, ChannelConfig } from "./types.js";
 import { sendEmail }                        from "./senders/email.js";
-import { sendTeams, sendWhatsApp, sendWebhook } from "./senders/channels.js";
+import { sendTeams, sendWhatsApp, sendWebhook, sendClusterAlert } from "./senders/channels.js";
 
 const db = new Pool({
   host:     process.env.POSTGRES_HOST || "localhost",
@@ -43,7 +44,7 @@ server.post("/test", async (req, reply) => {
     detected_at:    new Date().toISOString(),
   };
   try {
-    await dispatchAlert({ id: "test", type: type as any, config }, testEvent, "test-incident", "critical");
+    await dispatchAlert({ id: "test", type: type as any, config }, testEvent, "test-incident", "critical", "test-cluster");
     return { success: true, message: "Test alert sent" };
   } catch (err: any) {
     let msg = err.message || "Failed";
@@ -62,33 +63,51 @@ async function main() {
   await server.listen({ port: 3001, host: "0.0.0.0" });
   console.log("[alert-worker] Test server on http://localhost:3002");
 
-  await subscriber.subscribe("srevox:crashes", (err) => {
+  await subscriber.subscribe("srevox:crashes", "srevox:system_alerts", (err) => {
     if (err) { console.error("[alert-worker] Subscribe error:", err); process.exit(1); }
   });
 
-  subscriber.on("message", async (_channel: string, message: string) => {
+  subscriber.on("message", async (channel: string, message: string) => {
     try {
-      const event: CrashEvent = JSON.parse(message);
-      await processEvent(event);
+      if (channel === "srevox:crashes") {
+        const event: CrashEvent = JSON.parse(message);
+        await processEvent(event);
+      } else if (channel === "srevox:system_alerts") {
+        const event = JSON.parse(message);
+        await processSystemAlert(event);
+      }
     } catch (err) {
-      console.error("[alert-worker] Error processing event:", err);
+      console.error(`[alert-worker] Error processing message on channel ${channel}:`, err);
     }
   });
 
-  console.log("[alert-worker] 👂 Waiting for crash events on srevox:crashes...");
+  console.log("[alert-worker] 👂 Waiting for events on srevox:crashes and srevox:system_alerts...");
+
+  // Check cluster heartbeats every 30 seconds
+  setInterval(async () => {
+    try {
+      await checkClusterHeartbeats();
+    } catch (err) {
+      console.error("[alert-worker] Heartbeat check failed:", err);
+    }
+  }, 30000);
 }
 
 // ── Event pipeline ────────────────────────────────────────────────────────────
 async function processEvent(event: CrashEvent): Promise<void> {
   console.log(`[alert-worker] 🔔 ${event.pod_name} (${event.namespace}) — ${event.crash_reason} [${event.restart_count} restarts]`);
 
+  let clusterName = event.cluster_id;
   try {
-    await db.query(
-      `UPDATE clusters SET status = 'connected', last_seen_at = now() WHERE cluster_id = $1`,
+    const { rows } = await db.query(
+      `UPDATE clusters SET status = 'connected', last_seen_at = now() WHERE cluster_id = $1 RETURNING name`,
       [event.cluster_id]
     );
+    if (rows[0]?.name) {
+      clusterName = rows[0].name;
+    }
   } catch (err) {
-    console.error("[alert-worker] Failed to update cluster status:", err);
+    console.error("[alert-worker] Failed to update cluster status / fetch name:", err);
   }
 
   const rules = await getMatchingRules(event);
@@ -149,7 +168,7 @@ async function processEvent(event: CrashEvent): Promise<void> {
     }
 
     const results = await Promise.allSettled(
-      filteredChannels.map((ch) => dispatchAlert(ch, event, incidentId, rule.severity))
+      filteredChannels.map((ch) => dispatchAlert(ch, event, incidentId, rule.severity, clusterName))
     );
 
     await logResults(results, filteredChannels, incidentId);
@@ -222,14 +241,15 @@ async function dispatchAlert(
   channel: ChannelConfig,
   event: CrashEvent,
   incidentId: string,
-  severity: string
+  severity: string,
+  clusterName: string
 ): Promise<void> {
   switch (channel.type) {
-    case "email":    return sendEmail(channel.config, event, incidentId, severity);
-    case "teams":    return sendTeams(channel.config, event, incidentId, severity);
-    case "whatsapp": return sendWhatsApp(channel.config, event, incidentId, severity);
+    case "email":    return sendEmail(channel.config, event, incidentId, severity, clusterName);
+    case "teams":    return sendTeams(channel.config, event, incidentId, severity, clusterName);
+    case "whatsapp": return sendWhatsApp(channel.config, event, incidentId, severity, clusterName);
     case "webhook":
-    case "slack":    return sendWebhook(channel.config, event, incidentId, severity);
+    case "slack":    return sendWebhook(channel.config, event, incidentId, severity, clusterName);
     default:
       console.warn(`[alert-worker] Unknown channel type: ${channel.type}`);
   }
@@ -319,6 +339,22 @@ async function getServiceOwnerChannels(
   }
 }
 
+const ALGORITHM = "aes-256-cbc";
+
+function getKey(): Buffer {
+  const raw = process.env.ENCRYPTION_KEY || "dev_key_replace_in_production_32c";
+  return Buffer.from(createHash("sha256").update(raw).digest());
+}
+
+function decrypt(stored: string): string {
+  const [ivHex, encHex] = stored.split(":");
+  if (!ivHex || !encHex) throw new Error("Invalid encrypted value");
+  const iv = Buffer.from(ivHex, "hex");
+  const encrypted = Buffer.from(encHex, "hex");
+  const decipher = createDecipheriv(ALGORITHM, getKey(), iv);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
+}
+
 async function getChannels(channelIds: string[]): Promise<ChannelConfig[]> {
   if (!channelIds?.length) return [];
   const { rows } = await db.query(
@@ -327,13 +363,15 @@ async function getChannels(channelIds: string[]): Promise<ChannelConfig[]> {
   );
   return rows.map((r) => {
     let config: Record<string, string> = {};
-    try { config = JSON.parse(r.config_encrypted); }
-    catch {
+    try {
+      config = JSON.parse(r.config_encrypted);
+    } catch {
       try {
-        const parts = r.config_encrypted.split(":");
-        if (parts.length >= 2)
-          config = JSON.parse(Buffer.from(parts[1], "hex").toString("utf8"));
-      } catch { config = {}; }
+        config = JSON.parse(decrypt(r.config_encrypted));
+      } catch (err) {
+        console.error(`[alert-worker] Failed to decrypt config for channel ${r.id}:`, err);
+        config = {};
+      }
     }
     return { id: r.id, type: r.type, config };
   });
@@ -403,6 +441,110 @@ function parseJsonArr(v: unknown): string[] {
   if (Array.isArray(v)) return v;
   if (typeof v === "string") { try { return JSON.parse(v); } catch { return []; } }
   return [];
+}
+
+interface SystemAlertEvent {
+  event_type: "cluster_deleted" | "cluster_error" | "cluster_disconnected" | "cluster_connected";
+  org_id: string;
+  cluster_id: string;
+  cluster_name: string;
+  details?: string;
+}
+
+async function processSystemAlert(event: SystemAlertEvent): Promise<void> {
+  console.log(`[alert-worker] [system-alert] ${event.event_type} on cluster ${event.cluster_name}`);
+
+  // Fetch all enabled channels for the organization
+  const { rows: channels } = await db.query(
+    "SELECT channel_id AS id, type, config_encrypted FROM channels WHERE org_id = $1 AND enabled = true",
+    [event.org_id]
+  );
+  if (!channels.length) {
+    console.log(`[alert-worker] [system-alert] No enabled channels for org ${event.org_id} — skipping`);
+    return;
+  }
+
+  const channelConfigs: ChannelConfig[] = channels.map((r) => {
+    let config: Record<string, string> = {};
+    try {
+      config = JSON.parse(r.config_encrypted);
+    } catch {
+      try {
+        config = JSON.parse(decrypt(r.config_encrypted));
+      } catch (err) {
+        console.error(`[alert-worker] Failed to decrypt config for channel ${r.id}:`, err);
+        config = {};
+      }
+    }
+    return { id: r.id, type: r.type, config };
+  });
+
+  const title = getSystemAlertTitle(event.event_type, event.cluster_name);
+
+  const results = await Promise.allSettled(
+    channelConfigs.map((ch) =>
+      sendClusterAlert(ch, {
+        event_type: event.event_type,
+        title,
+        cluster_name: event.cluster_name,
+        details: event.details,
+      })
+    )
+  );
+
+  results.forEach((r, idx) => {
+    const ch = channelConfigs[idx];
+    if (r.status === "rejected") {
+      console.error(`[alert-worker] [system-alert] Failed to notify ${ch.type}:`, r.reason);
+    } else {
+      console.log(`[alert-worker] [system-alert] Notified ${ch.type} successfully`);
+    }
+  });
+}
+
+function getSystemAlertTitle(eventType: string, clusterName: string): string {
+  switch (eventType) {
+    case "cluster_deleted":
+      return `Cluster '${clusterName}' Deleted`;
+    case "cluster_error":
+      return `Cluster '${clusterName}' Connection Error`;
+    case "cluster_disconnected":
+      return `Cluster '${clusterName}' Disconnected`;
+    case "cluster_connected":
+      return `Cluster '${clusterName}' Reconnected`;
+    default:
+      return `Cluster Alert on '${clusterName}'`;
+  }
+}
+
+async function checkClusterHeartbeats(): Promise<void> {
+  // Find clusters of type 'agent' in 'connected' or 'pending' state that haven't sent a heartbeat for > 1 minute
+  const { rows: timedOutClusters } = await db.query(
+    `SELECT cluster_id, org_id, name, status, last_seen_at
+     FROM clusters
+     WHERE status IN ('connected', 'pending')
+       AND connection_type = 'agent'
+       AND (last_seen_at IS NULL OR last_seen_at < now() - interval '1 minute')`
+  );
+
+  for (const cluster of timedOutClusters) {
+    console.log(`[heartbeat-check] Cluster '${cluster.name}' (${cluster.cluster_id}) timed out (last seen: ${cluster.last_seen_at})`);
+    
+    // Update status to 'disconnected'
+    await db.query(
+      `UPDATE clusters SET status = 'disconnected' WHERE cluster_id = $1`,
+      [cluster.cluster_id]
+    );
+
+    // Trigger the alert!
+    await processSystemAlert({
+      event_type: "cluster_disconnected",
+      org_id: cluster.org_id,
+      cluster_id: cluster.cluster_id,
+      cluster_name: cluster.name,
+      details: `No heartbeat received since ${cluster.last_seen_at ? new Date(cluster.last_seen_at).toUTCString() : "never"}. Agent is likely down or disconnected.`,
+    });
+  }
 }
 
 process.on("SIGTERM", async () => {

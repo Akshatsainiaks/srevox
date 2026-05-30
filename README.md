@@ -282,6 +282,7 @@ kubectl delete pod crash-test
 | `All channels filtered` | Rule has no channels | Dashboard → Alert Rules → add channel |
 | Agent can't reach Redis | Firewall or bind | Open port 6379; `bind 0.0.0.0` |
 | No incidents in dashboard | `CLUSTER_ID` mismatch | Must match UUID exactly |
+| `pods is forbidden` | Missing agent RBAC | Apply RBAC: [RBAC Setup Guide](docs/agent-rbac.md) |
 
 ---
 
@@ -843,6 +844,7 @@ kubectl delete pod crash-test
 | "All channels filtered" | Rule has no channels | Dashboard → Alert Rules → Add Channel |
 | Agent can't reach Redis | Firewall or bind issue | Open port `6379`; set `bind 0.0.0.0` in Redis config |
 | No incidents in dashboard | `CLUSTER_ID` mismatch | Must match UUID exactly from Dashboard |
+| `pods is forbidden` / Permission Error | Missing agent RBAC permissions | Apply RBAC permissions. See [RBAC Setup Guide](docs/agent-rbac.md) |
 
 ---
 

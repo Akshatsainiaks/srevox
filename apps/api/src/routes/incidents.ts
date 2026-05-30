@@ -10,7 +10,10 @@ export default async function incidentRoutes(app: FastifyInstance) {
   // GET /api/incidents/stats/summary
   app.get("/stats/summary", { onRequest: [(app as any).authenticate] }, async (req) => {
     const { org_id } = getUser(req);
-    const cached = await getCache(`stats:${org_id}`);
+    const { cluster_id } = req.query as { cluster_id?: string };
+    
+    const cacheKey = cluster_id ? `stats:${org_id}:${cluster_id}` : `stats:${org_id}`;
+    const cached = await getCache(cacheKey);
     if (cached) return cached;
 
     const [stats] = await sql`
@@ -25,6 +28,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
         COUNT(*) FILTER (WHERE crash_reason = 'CrashLoopBackOff')           AS crash_loop_count
       FROM incidents
       WHERE org_id = ${org_id}
+        ${cluster_id ? sql`AND cluster_id = ${cluster_id}` : sql``}
     `;
 
     const result = {
@@ -38,7 +42,7 @@ export default async function incidentRoutes(app: FastifyInstance) {
       crash_loop_count:   Number(stats.crash_loop_count),
     };
 
-    await setCache(`stats:${org_id}`, result, 30);
+    await setCache(cacheKey, result, 30);
     return result;
   });
 
@@ -184,5 +188,64 @@ export default async function incidentRoutes(app: FastifyInstance) {
       const msg = err.response?.data?.detail || err.response?.data?.error || err.message;
       return reply.status(502).send({ detail: `AI service unavailable: ${msg}` });
     }
+  });
+
+  // DELETE /api/incidents/:id — member+
+  app.delete("/:id", {
+    onRequest: [(app as any).authenticate, requireRole("member")],
+  }, async (req) => {
+    const { org_id } = getUser(req);
+    const { id } = req.params as { id: string };
+    await sql`
+      DELETE FROM incidents WHERE incident_id = ${id} AND org_id = ${org_id}
+    `;
+    return { message: "Deleted" };
+  });
+
+  // POST /api/incidents/bulk-acknowledge — member+
+  app.post("/bulk-acknowledge", {
+    onRequest: [(app as any).authenticate, requireRole("member")],
+  }, async (req, reply) => {
+    const { org_id, sub } = getUser(req);
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return reply.status(400).send({ detail: "ids array required" });
+    }
+    await sql`
+      UPDATE incidents SET status = 'acknowledged', acknowledged_by = ${sub}
+      WHERE incident_id IN ${sql(ids)} AND org_id = ${org_id}
+    `;
+    return { message: "Bulk Acknowledged" };
+  });
+
+  // POST /api/incidents/bulk-resolve — member+
+  app.post("/bulk-resolve", {
+    onRequest: [(app as any).authenticate, requireRole("member")],
+  }, async (req, reply) => {
+    const { org_id, sub } = getUser(req);
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return reply.status(400).send({ detail: "ids array required" });
+    }
+    await sql`
+      UPDATE incidents SET status = 'resolved', resolved_at = now(), resolved_by = ${sub}
+      WHERE incident_id IN ${sql(ids)} AND org_id = ${org_id}
+    `;
+    return { message: "Bulk Resolved" };
+  });
+
+  // POST /api/incidents/bulk-delete — member+
+  app.post("/bulk-delete", {
+    onRequest: [(app as any).authenticate, requireRole("member")],
+  }, async (req, reply) => {
+    const { org_id } = getUser(req);
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return reply.status(400).send({ detail: "ids array required" });
+    }
+    await sql`
+      DELETE FROM incidents WHERE incident_id IN ${sql(ids)} AND org_id = ${org_id}
+    `;
+    return { message: "Bulk Deleted" };
   });
 }

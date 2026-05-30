@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Bell, Plus, Trash2, Mail, MessageSquare, Webhook, Users, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import { fetchChannels, createChannel, deleteChannel, toggleChannel, testChannel } from "@/lib/api";
+import { Bell, Plus, Trash2, Mail, MessageSquare, Webhook, Users, CheckCircle, AlertCircle, Loader2, Pencil } from "lucide-react";
+import { fetchChannels, fetchChannel, createChannel, updateChannel, deleteChannel, toggleChannel, testChannel } from "@/lib/api";
 import type { Channel } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
 import { getUser } from "@/lib/auth";
@@ -117,10 +117,109 @@ function AddModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => vo
   );
 }
 
+function EditModal({ channelId, onClose, onSaved }: { channelId: string; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<ChannelType>("email");
+  const [cfg, setCfg] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchChannel(channelId)
+      .then((res) => {
+        setName(res.name);
+        setType(res.type);
+        setCfg(res.config || {});
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [channelId]);
+
+  const set = (k: string, v: string) => setCfg((p) => ({ ...p, [k]: v }));
+
+  const submit = async () => {
+    if (!name) return;
+    setSaving(true);
+    try {
+      await updateChannel(channelId, { name, config: cfg });
+      onSaved();
+      onClose();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-[#1e2130] rounded-2xl p-8 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-[#1e2130] rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-[#1e2130]">
+          <h2 className="font-bold text-gray-900 dark:text-white">Edit alert channel</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 text-xl">&times;</button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="label">Channel name</label>
+            <input className="input" placeholder="e.g. Engineering on-call" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </div>
+          <div>
+            <label className="label">Channel type</label>
+            <div className="px-3 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-500 capitalize flex items-center gap-2">
+              {CHANNEL_LABELS[type]} (Cannot change type)
+            </div>
+          </div>
+          {name && FIELDS[type].filter((f) => {
+            if (type !== "whatsapp") return true;
+            const prov = cfg.provider || "twilio";
+            if (f.key === "provider" || f.key === "to") return true;
+            if (prov === "meta") {
+              return f.key === "phone_number_id" || f.key === "token";
+            } else {
+              return f.key === "account_sid" || f.key === "auth_token" || f.key === "from";
+            }
+          }).map((f) => (
+            <div key={f.key}>
+              <label className="label">{f.label}</label>
+              {f.key === "provider" ? (
+                <select className="input" value={cfg[f.key] || "twilio"} onChange={(e) => set(f.key, e.target.value)}>
+                  <option value="twilio">Twilio</option>
+                  <option value="meta">Meta (WhatsApp Cloud API)</option>
+                </select>
+              ) : (
+                <input type={f.secret ? "password" : "text"} className="input" placeholder={f.placeholder}
+                  value={cfg[f.key] || ""} onChange={(e) => set(f.key, e.target.value)} />
+              )}
+              {f.hint && <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">{f.hint}</p>}
+            </div>
+          ))}
+          <div className="flex gap-3 pt-2">
+            <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+            <button onClick={submit} disabled={!name || saving} className="btn-primary flex-1 justify-center">
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<Record<string, "ok" | "fail">>({});
   const me = getUser();
@@ -149,6 +248,7 @@ export default function ChannelsPage() {
         )}
       </div>
       {showAdd && <AddModal onClose={() => setShowAdd(false)} onAdded={load} />}
+      {editingId && <EditModal channelId={editingId} onClose={() => setEditingId(null)} onSaved={load} />}
       {loading ? (
         <div className="space-y-3">{[...Array(2)].map((_, i) => <div key={i} className="card p-5 animate-pulse bg-gray-100 dark:bg-slate-800 h-20" />)}</div>
       ) : channels.length === 0 ? (
@@ -193,7 +293,10 @@ export default function ChannelsPage() {
                     </>
                   )}
                   {me?.role === "admin" && (
-                    <button onClick={() => remove(ch.channel_id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <>
+                      <button onClick={() => setEditingId(ch.channel_id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={() => remove(ch.channel_id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    </>
                   )}
                 </div>
               </div>

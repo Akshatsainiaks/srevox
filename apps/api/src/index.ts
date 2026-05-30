@@ -17,6 +17,7 @@ import bcrypt              from "bcryptjs";
 import infrastructureRoutes from "./routes/infrastructure.js";
 import aiSettingsRoutes from './routes/aiSettings.js';
 import resourceAlertRoutes  from "./routes/resourceAlerts.js";
+import { checkClusterNodesAndMetrics } from "./services/infraEvaluator.js";
 
 const app = Fastify({ logger: { level: "info" } });
 
@@ -124,6 +125,7 @@ async function runMigrations() {
         target_name TEXT DEFAULT '', severity TEXT DEFAULT 'warning',
         enabled BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT now()
       )`;
+    await sql`ALTER TABLE resource_alerts ALTER COLUMN cluster_id TYPE TEXT USING cluster_id::text`;
     await sql`
       CREATE TABLE IF NOT EXISTS service_owners (
         service_owner_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -138,6 +140,16 @@ async function runMigrations() {
         api_key TEXT DEFAULT '', ollama_url TEXT DEFAULT 'http://localhost:11434',
         updated_at TIMESTAMPTZ DEFAULT now()
       )`;
+
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS master_nodes_ready INT DEFAULT 0`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS master_nodes_total INT DEFAULT 0`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS worker_nodes_ready INT DEFAULT 0`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS worker_nodes_total INT DEFAULT 0`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS master_alerts_enabled BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS worker_alerts_enabled BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS node_cpu_threshold INT DEFAULT 85`;
+    await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS node_memory_threshold INT DEFAULT 90`;
+
     await sql`ALTER TABLE incidents DROP CONSTRAINT IF EXISTS incidents_cluster_id_fkey`;
     await sql`ALTER TABLE incidents ADD CONSTRAINT incidents_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(cluster_id) ON DELETE SET NULL`;
     await sql`ALTER TABLE incidents DROP CONSTRAINT IF EXISTS incidents_rule_id_fkey`;
@@ -179,6 +191,18 @@ async function seedDefaults() {
   await seedDefaults();
     await app.listen({ port: PORT, host: "0.0.0.0" });
     console.log(`🚀 Srevox API running on http://localhost:${PORT}`);
+
+    // Run infrastructure nodes evaluation loop every 60 seconds
+    setInterval(() => {
+      checkClusterNodesAndMetrics().catch((err: any) => {
+        console.error("[infra-evaluator] interval check error:", err.message);
+      });
+    }, 60000);
+
+    // Initial check on startup
+    checkClusterNodesAndMetrics().catch((err: any) => {
+      console.error("[infra-evaluator] startup check error:", err.message);
+    });
   } catch (err) {
     app.log.error(err);
     process.exit(1);

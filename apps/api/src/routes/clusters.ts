@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { genId } from "../utils/id.js";
 import sql from "../db/sql.js";
-import { invalidateCache } from "../db/redis.js";
+import redis, { invalidateCache } from "../db/redis.js";
 import { getUser, requireRole } from "../middleware/rbac.js";
 
 export default async function clusterRoutes(app: FastifyInstance) {
@@ -10,11 +10,14 @@ export default async function clusterRoutes(app: FastifyInstance) {
   app.get("/", { onRequest: [(app as any).authenticate] }, async (req) => {
     const { org_id } = getUser(req);
     const clusters = await sql`
-      SELECT cluster_id, name, connection_type, cloud_provider, k8s_version,
-             status, last_seen_at, error_message, created_at
-      FROM clusters
-      WHERE org_id = ${org_id}
-      ORDER BY created_at DESC
+      SELECT c.cluster_id, c.name, c.connection_type, c.cloud_provider, c.k8s_version,
+             c.status, c.last_seen_at, c.error_message, c.created_at,
+             c.master_nodes_ready, c.master_nodes_total, c.worker_nodes_ready, c.worker_nodes_total,
+             c.master_alerts_enabled, c.worker_alerts_enabled, c.node_cpu_threshold, c.node_memory_threshold,
+             (SELECT COUNT(*)::int FROM incidents WHERE cluster_id = c.cluster_id AND status = 'open') AS open_incidents_count
+      FROM clusters c
+      WHERE c.org_id = ${org_id}
+      ORDER BY c.created_at DESC
     `;
     return { clusters };
   });
@@ -66,11 +69,23 @@ export default async function clusterRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
-    const { name, cloud_provider, k8s_version } = req.body as any;
+    const {
+      name,
+      cloud_provider,
+      k8s_version,
+      master_alerts_enabled,
+      worker_alerts_enabled,
+      node_cpu_threshold,
+      node_memory_threshold,
+    } = req.body as any;
 
-    if (name)           await sql`UPDATE clusters SET name = ${name} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
-    if (cloud_provider) await sql`UPDATE clusters SET cloud_provider = ${cloud_provider} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
-    if (k8s_version)    await sql`UPDATE clusters SET k8s_version = ${k8s_version} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (name !== undefined)           await sql`UPDATE clusters SET name = ${name} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (cloud_provider !== undefined) await sql`UPDATE clusters SET cloud_provider = ${cloud_provider} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (k8s_version !== undefined)    await sql`UPDATE clusters SET k8s_version = ${k8s_version} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (master_alerts_enabled !== undefined) await sql`UPDATE clusters SET master_alerts_enabled = ${master_alerts_enabled} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (worker_alerts_enabled !== undefined) await sql`UPDATE clusters SET worker_alerts_enabled = ${worker_alerts_enabled} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (node_cpu_threshold !== undefined)    await sql`UPDATE clusters SET node_cpu_threshold = ${node_cpu_threshold} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
+    if (node_memory_threshold !== undefined) await sql`UPDATE clusters SET node_memory_threshold = ${node_memory_threshold} WHERE cluster_id = ${id} AND org_id = ${org_id}`;
 
     await invalidateCache(`clusters:${org_id}`);
     return { message: "Updated" };
@@ -82,17 +97,51 @@ export default async function clusterRoutes(app: FastifyInstance) {
     const { status, k8s_version, error_message, agent_token } = req.body as any;
 
     // Verify agent token
-    const [cluster] = await sql`SELECT cluster_id FROM clusters WHERE cluster_id = ${id} AND agent_token = ${agent_token || ""}`;
+    const [cluster] = await sql`
+      SELECT cluster_id, org_id, name, status, error_message 
+      FROM clusters 
+      WHERE cluster_id = ${id} AND agent_token = ${agent_token || ""}
+    `;
     if (!cluster) return { message: "Invalid token" };
+
+    const newStatus = status || "connected";
+    const statusChanged = cluster.status !== newStatus;
+    const errorChanged = cluster.error_message !== (error_message || null);
 
     await sql`
       UPDATE clusters
-      SET status = ${status || "connected"},
+      SET status = ${newStatus},
           last_seen_at = now(),
           k8s_version = COALESCE(${k8s_version || null}, k8s_version),
           error_message = ${error_message || null}
       WHERE cluster_id = ${id}
     `;
+
+    // Publish alert if status changed or new error is reported
+    if (statusChanged || errorChanged) {
+      let eventType = "cluster_connected";
+      let details = `Cluster '${cluster.name}' is connected and reporting healthy.`;
+      
+      if (newStatus === "error" || error_message) {
+        eventType = "cluster_error";
+        details = `Cluster '${cluster.name}' reported an error: ${error_message || "Unknown error"}`;
+      } else if (newStatus === "disconnected") {
+        eventType = "cluster_disconnected";
+        details = `Cluster '${cluster.name}' went offline.`;
+      }
+
+      await redis.publish(
+        "srevox:system_alerts",
+        JSON.stringify({
+          event_type: eventType,
+          org_id: cluster.org_id,
+          cluster_id: id,
+          cluster_name: cluster.name,
+          details,
+        })
+      );
+    }
+
     return { message: "Heartbeat recorded" };
   });
 
@@ -102,6 +151,25 @@ export default async function clusterRoutes(app: FastifyInstance) {
   }, async (req) => {
     const { org_id } = getUser(req);
     const { id } = req.params as { id: string };
+
+    const [cluster] = await sql`
+      SELECT name, org_id 
+      FROM clusters 
+      WHERE cluster_id = ${id} AND org_id = ${org_id}
+    `;
+    if (cluster) {
+      await redis.publish(
+        "srevox:system_alerts",
+        JSON.stringify({
+          event_type: "cluster_deleted",
+          org_id: cluster.org_id,
+          cluster_id: id,
+          cluster_name: cluster.name,
+          details: `Cluster '${cluster.name}' was permanently deleted by an administrator.`,
+        })
+      );
+    }
+
     await sql`UPDATE incidents SET cluster_id = NULL, rule_id = NULL WHERE cluster_id = ${id}`;
     await sql`DELETE FROM alert_rules WHERE cluster_id = ${id}`;
     await sql`DELETE FROM clusters WHERE cluster_id = ${id} AND org_id = ${org_id}`;

@@ -12,7 +12,8 @@ export async function sendTeams(
   config: Record<string, string>,
   event: CrashEvent,
   incidentId: string,
-  severity: string
+  severity: string,
+  clusterName: string
 ): Promise<void> {
   const color       = SEVERITY_COLORS[severity] || "warning";
   const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/incidents/${incidentId}`;
@@ -28,7 +29,7 @@ export async function sendTeams(
         body: [
           {
             type: "TextBlock",
-            text: `🔔 Srevox — Pod Crash (${severity.toUpperCase()})`,
+            text: `🔔 Srevox [${clusterName}] — Pod Crash (${severity.toUpperCase()})`,
             weight: "Bolder",
             size: "Medium",
             color,
@@ -36,6 +37,7 @@ export async function sendTeams(
           {
             type: "FactSet",
             facts: [
+              { title: "Cluster",   value: clusterName },
               { title: "Pod",       value: event.pod_name },
               { title: "Namespace", value: event.namespace },
               { title: "Container", value: event.container_name || "—" },
@@ -66,14 +68,16 @@ export async function sendWhatsApp(
   config: Record<string, string>,
   event: CrashEvent,
   incidentId: string,
-  severity: string
+  severity: string,
+  clusterName: string
 ): Promise<void> {
   const emoji = severity === "critical" ? "🔴" : severity === "warning" ? "🟡" : "🔵";
   const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/incidents/${incidentId}`;
 
   const message = [
-    `${emoji} *Srevox Alert — ${severity.toUpperCase()}*`,
+    `${emoji} *Srevox Alert [${clusterName}] — ${severity.toUpperCase()}*`,
     ``,
+    `*Cluster:* ${clusterName}`,
     `*Pod:* ${event.pod_name}`,
     `*Namespace:* ${event.namespace}`,
     `*Reason:* ${event.crash_reason}`,
@@ -131,7 +135,8 @@ export async function sendWebhook(
   config: Record<string, string>,
   event: CrashEvent,
   incidentId: string,
-  severity: string
+  severity: string,
+  clusterName: string
 ): Promise<void> {
   const import_crypto = await import("crypto");
   const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/incidents/${incidentId}`;
@@ -141,6 +146,7 @@ export async function sendWebhook(
     incident_id:  incidentId,
     severity,
     cluster_id:   event.cluster_id,
+    cluster_name: clusterName,
     pod_name:     event.pod_name,
     namespace:    event.namespace,
     container:    event.container_name,
@@ -163,4 +169,132 @@ export async function sendWebhook(
 
   await axios.post(config.url, payload, { headers, timeout: 10000 });
   console.log(`[webhook] Sent to ${config.url}`);
+}
+
+export async function sendClusterAlert(
+  channel: { type: string; config: Record<string, string> },
+  alert: {
+    event_type: string;
+    title: string;
+    cluster_name: string;
+    details?: string;
+  }
+): Promise<void> {
+  if (channel.type === "teams") {
+    const isError = alert.event_type.includes("error") || alert.event_type.includes("disconnect") || alert.event_type.includes("deleted");
+    const color = isError ? "attention" : "good";
+    const card = {
+      type: "message",
+      attachments: [{
+        contentType: "application/vnd.microsoft.card.adaptive",
+        content: {
+          $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+          type: "AdaptiveCard",
+          version: "1.4",
+          body: [
+            {
+              type: "TextBlock",
+              text: `⚠️ Srevox Cluster Alert: ${alert.title}`,
+              weight: "Bolder",
+              size: "Medium",
+              color,
+            },
+            {
+              type: "FactSet",
+              facts: [
+                { title: "Cluster", value: alert.cluster_name },
+                { title: "Event",   value: alert.event_type.toUpperCase() },
+                { title: "Details", value: alert.details || "No details provided" },
+              ],
+            },
+          ],
+        },
+      }],
+    };
+    await axios.post(channel.config.webhook_url, card, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 10000,
+    });
+    console.log(`[teams-cluster-alert] Adaptive card sent`);
+  } else if (channel.type === "whatsapp") {
+    const emoji = alert.event_type.includes("error") || alert.event_type.includes("disconnect") || alert.event_type.includes("deleted") ? "🔴" : "🟢";
+    const message = [
+      `${emoji} *Srevox Cluster Alert — ${alert.title}*`,
+      ``,
+      `*Cluster:* ${alert.cluster_name}`,
+      `*Event:* ${alert.event_type.toUpperCase()}`,
+      `*Details:* ${alert.details || "No details"}`,
+    ].join("\n");
+    if (channel.config.provider === "meta") {
+      await sendViaMetaWhatsApp(channel.config, message);
+    } else {
+      await sendViaTwilio(channel.config, message);
+    }
+  } else if (channel.type === "webhook" || channel.type === "slack") {
+    const payload = {
+      source: "srevox",
+      event_type: "cluster_alert",
+      alert_type: alert.event_type,
+      title: alert.title,
+      cluster_name: alert.cluster_name,
+      details: alert.details || "",
+      timestamp: new Date().toISOString(),
+    };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "User-Agent":   "Srevox/1.0",
+    };
+    if (channel.config.secret) {
+      const import_crypto = await import("crypto");
+      const sig = import_crypto.createHmac("sha256", channel.config.secret)
+        .update(JSON.stringify(payload)).digest("hex");
+      headers["X-Srevox-Signature"] = `sha256=${sig}`;
+    }
+    await axios.post(channel.config.url, payload, { headers, timeout: 10000 });
+    console.log(`[webhook-cluster-alert] Sent to ${channel.config.url}`);
+  } else if (channel.type === "email") {
+    const nodemailer = await import("nodemailer");
+    const transporter = nodemailer.createTransport({
+      host:   channel.config.smtp_host || "smtp.gmail.com",
+      port:   Number(channel.config.smtp_port || 587),
+      secure: channel.config.smtp_port === "465",
+      auth:   { user: channel.config.smtp_user, pass: channel.config.smtp_pass },
+    });
+    const isError = alert.event_type.includes("error") || alert.event_type.includes("disconnect") || alert.event_type.includes("deleted");
+    const color = isError ? "#DC2626" : "#10B981";
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      <div style="max-width:600px;margin:40px auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08); border-top: 4px solid ${color};">
+        <div style="padding:28px;">
+          <h2 style="color:${color}; margin-top:0;">⚠️ Srevox Cluster Alert</h2>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:10px 0;color:#64748b;font-size:13px;width:100px;">Event</td>
+              <td style="padding:10px 0;color:#0f172a;font-size:13px;font-weight:600;">${alert.title}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:10px 0;color:#64748b;font-size:13px;width:100px;">Cluster</td>
+              <td style="padding:10px 0;color:#0f172a;font-size:13px;font-weight:600;">${alert.cluster_name}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:10px 0;color:#64748b;font-size:13px;width:100px;">Details</td>
+              <td style="padding:10px 0;color:#0f172a;font-size:13px;font-weight:600;">${alert.details || "No details provided"}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </body>
+    </html>`;
+    const recipients = (channel.config.to || channel.config.smtp_user).split(",").map((e) => e.trim());
+    await transporter.sendMail({
+      from:    `"Srevox Alerts" <${channel.config.from || channel.config.smtp_user}>`,
+      to:      recipients.join(", "),
+      subject: `[Srevox Cluster Alert] ${alert.title} — ${alert.cluster_name}`,
+      html,
+    });
+    console.log(`[email-cluster-alert] Sent to ${recipients.join(", ")}`);
+  }
 }

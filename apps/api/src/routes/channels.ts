@@ -19,6 +19,32 @@ export default async function channelRoutes(app: FastifyInstance) {
     return { channels };
   });
 
+  // GET /api/channels/:id — admin only
+  app.get("/:id", {
+    onRequest: [(app as any).authenticate, requireRole("admin")],
+  }, async (req, reply) => {
+    const { org_id } = getUser(req);
+    const { id } = req.params as { id: string };
+    const [channel] = await sql`
+      SELECT channel_id, name, type, enabled, config_encrypted, created_at
+      FROM channels
+      WHERE channel_id = ${id} AND org_id = ${org_id}
+    `;
+    if (!channel) return reply.status(404).send({ detail: "Not found" });
+
+    let config: Record<string, string> = {};
+    try { config = JSON.parse(decrypt(channel.config_encrypted)); } catch { config = {}; }
+
+    return {
+      channel_id: channel.channel_id,
+      name: channel.name,
+      type: channel.type,
+      enabled: channel.enabled,
+      config,
+      created_at: channel.created_at
+    };
+  });
+
   // POST /api/channels — admin only
   app.post("/", {
     onRequest: [(app as any).authenticate, requireRole("admin")],
@@ -44,6 +70,24 @@ export default async function channelRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     await sql`UPDATE channels SET enabled = NOT enabled WHERE channel_id = ${id} AND org_id = ${org_id}`;
     return { message: "Toggled" };
+  });
+
+  // PATCH /api/channels/:id — admin only
+  app.patch("/:id", {
+    onRequest: [(app as any).authenticate, requireRole("admin")],
+  }, async (req) => {
+    const { org_id } = getUser(req);
+    const { id } = req.params as { id: string };
+    const { name, config } = req.body as { name?: string; config?: Record<string, string> };
+
+    if (name) {
+      await sql`UPDATE channels SET name = ${name} WHERE channel_id = ${id} AND org_id = ${org_id}`;
+    }
+    if (config) {
+      await sql`UPDATE channels SET config_encrypted = ${encrypt(JSON.stringify(config))} WHERE channel_id = ${id} AND org_id = ${org_id}`;
+    }
+
+    return { message: "Updated" };
   });
 
   // POST /api/channels/:id/test — member+

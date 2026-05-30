@@ -12,61 +12,45 @@ const DOCS_KEY = "sv_docs_theme";
 
 function useDocsTheme() {
   const [dark, setDark] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+
+  const applyTheme = (toDark: boolean) => {
+    const r = document.documentElement;
+    if (toDark) {
+      r.classList.add("dark");
+      r.style.setProperty("--docs-bg",        "#0d0f17");
+      r.style.setProperty("--docs-side-bg",   "#090b11");
+      r.style.setProperty("--docs-nav-bg",    "#090b11");
+      r.style.setProperty("--docs-nav-bdr",   "#1e293b");
+      r.style.setProperty("--docs-txt",       "#f8fafc");
+      r.style.setProperty("--docs-muted",     "#64748b");
+      r.style.setProperty("--docs-bdr",       "#1e293b");
+      r.style.setProperty("--docs-input-bg",  "#151823");
+      r.style.setProperty("--docs-input-txt", "#cbd5e1");
+    } else {
+      r.classList.remove("dark");
+      r.style.setProperty("--docs-bg",        "#ffffff");
+      r.style.setProperty("--docs-side-bg",   "#f9fafb");
+      r.style.setProperty("--docs-nav-bg",    "#ffffff");
+      r.style.setProperty("--docs-nav-bdr",   "#e5e7eb");
+      r.style.setProperty("--docs-txt",       "#0f172a");
+      r.style.setProperty("--docs-muted",     "#94a3b8");
+      r.style.setProperty("--docs-bdr",       "#e5e7eb");
+      r.style.setProperty("--docs-input-bg",  "#ffffff");
+      r.style.setProperty("--docs-input-txt", "#374151");
+    }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem(DOCS_KEY);
     const isDark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
     setDark(isDark);
-    const r = document.documentElement;
-    if (isDark) {
-      r.style.setProperty("--docs-bg",        "#0d0f17");
-      r.style.setProperty("--docs-side-bg",   "#101218");
-      r.style.setProperty("--docs-nav-bg",    "#101218");
-      r.style.setProperty("--docs-nav-bdr",   "#1e293b");
-      r.style.setProperty("--docs-txt",       "#f1f5f9");
-      r.style.setProperty("--docs-muted",     "#64748b");
-      r.style.setProperty("--docs-bdr",       "#1e293b");
-      r.style.setProperty("--docs-input-bg",  "#1e293b");
-      r.style.setProperty("--docs-input-txt", "#cbd5e1");
-    } else {
-      r.style.setProperty("--docs-bg",        "#ffffff");
-      r.style.setProperty("--docs-side-bg",   "#f9fafb");
-      r.style.setProperty("--docs-nav-bg",    "#ffffff");
-      r.style.setProperty("--docs-nav-bdr",   "#e5e7eb");
-      r.style.setProperty("--docs-txt",       "#111827");
-      r.style.setProperty("--docs-muted",     "#9ca3af");
-      r.style.setProperty("--docs-bdr",       "#e5e7eb");
-      r.style.setProperty("--docs-input-bg",  "#ffffff");
-      r.style.setProperty("--docs-input-txt", "#374151");
-    }
+    applyTheme(isDark);
   }, []);
 
   const toggle = (toDark: boolean) => {
     setDark(toDark);
     localStorage.setItem(DOCS_KEY, toDark ? "dark" : "light");
-    const r = document.documentElement;
-    if (toDark) {
-      r.style.setProperty("--docs-bg",        "#0d0f17");
-      r.style.setProperty("--docs-side-bg",   "#101218");
-      r.style.setProperty("--docs-nav-bg",    "#101218");
-      r.style.setProperty("--docs-nav-bdr",   "#1e293b");
-      r.style.setProperty("--docs-txt",       "#f1f5f9");
-      r.style.setProperty("--docs-muted",     "#64748b");
-      r.style.setProperty("--docs-bdr",       "#1e293b");
-      r.style.setProperty("--docs-input-bg",  "#1e293b");
-      r.style.setProperty("--docs-input-txt", "#cbd5e1");
-    } else {
-      r.style.setProperty("--docs-bg",        "#ffffff");
-      r.style.setProperty("--docs-side-bg",   "#f9fafb");
-      r.style.setProperty("--docs-nav-bg",    "#ffffff");
-      r.style.setProperty("--docs-nav-bdr",   "#e5e7eb");
-      r.style.setProperty("--docs-txt",       "#111827");
-      r.style.setProperty("--docs-muted",     "#9ca3af");
-      r.style.setProperty("--docs-bdr",       "#e5e7eb");
-      r.style.setProperty("--docs-input-bg",  "#ffffff");
-      r.style.setProperty("--docs-input-txt", "#374151");
-    }
+    applyTheme(toDark);
   };
 
   return { dark, toggle };
@@ -241,20 +225,63 @@ cat ~/.kube/config
 kubectl config view --minify --raw`}/>
       <Callout type="warning" dark={d}>Never share your kubeconfig. It grants full cluster access. For production, use the agent method instead.</Callout>
     </>),
-    rbac: (<>
-      <h1 className={h2}>RBAC permissions</h1>
-      <p className={p}>The Srevox agent needs read-only access to pods. The agent manifest creates the minimum required RBAC:</p>
-      <CodeBlock dark={d} code={`# ClusterRole — read-only pods
+    rbac: (
+      <>
+        <h1 className={h2}>RBAC permissions</h1>
+        <p className={p}>
+          The Srevox agent runs as a Go process inside your cluster. It needs read-only access to pods, nodes, namespaces, services, deployments, and cronjobs to monitor resources and capture events. If you see watch stream access/forbidden errors, you need to apply the ClusterRole and ClusterRoleBinding permissions.
+        </p>
+        
+        <h3 className={h3}>Apply direct from terminal</h3>
+        <p className={p}>
+          Run the following command in your terminal to create and bind the required permissions for the <code>srevox-agent</code> ServiceAccount in the <code>kube-system</code> namespace:
+        </p>
+        <CodeBlock dark={d} code={`kubectl apply -f - <<EOF
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: srevox-agent
 rules:
   - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]`}/>
-      <Callout type="success" dark={d}>The agent only reads pod status — it never modifies your cluster.</Callout>
-    </>),
+    resources: ["pods", "nodes", "namespaces", "services", "endpoints", "persistentvolumes", "persistentvolumeclaims", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: srevox-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: srevox-agent
+subjects:
+  - kind: ServiceAccount
+    name: srevox-agent
+    namespace: kube-system
+EOF`} />
+        
+        <h3 className={h3}>Restart the agent</h3>
+        <p className={p}>Restart the agent deployment to load and apply the new permissions:</p>
+        <CodeBlock dark={d} code={`kubectl rollout restart deployment/srevox-agent -n kube-system`} />
+
+        <h3 className={h3}>Verify permissions</h3>
+        <p className={p}>Verify the ServiceAccount possesses access using the auth check command:</p>
+        <CodeBlock dark={d} code={`kubectl auth can-i watch pods --as=system:serviceaccount:kube-system:srevox-agent -n default`} />
+        
+        <Callout type="success" dark={d}>
+          Expected verification output is <code>yes</code>. The agent only reads pod status and event logs — it never writes or modifies cluster workloads.
+        </Callout>
+      </>
+    ),
     teams: (<>
       <h1 className={h2}>Microsoft Teams</h1>
       <p className={p}>Send crash alerts directly to a Teams channel via incoming webhook.</p>
@@ -532,9 +559,20 @@ export default function DocsPage() {
   const [mobileNav, setMobileNav] = useState(false);
 
   const toggleSection = (id: string) => setOpen(p => p.includes(id) ? p.filter(s => s !== id) : [...p, id]);
-  const filtered = search ? NAV.map(s => ({ ...s, items: s.items.filter(i => i.title.toLowerCase().includes(search.toLowerCase())) })).filter(s => s.items.length > 0) : NAV;
 
-  // Apply docs theme as a data attribute on the docs wrapper, NOT on html element
+  const handleSectionClick = (s: typeof NAV[number]) => {
+    const isOpen = open.includes(s.id);
+    if (isOpen) {
+      setOpen(p => p.filter(x => x !== s.id));
+    } else {
+      setOpen(p => [...p, s.id]);
+      if (s.items && s.items.length > 0) {
+        setActive(s.items[0].id);
+      }
+    }
+  };
+
+  const filtered = search ? NAV.map(s => ({ ...s, items: s.items.filter(i => i.title.toLowerCase().includes(search.toLowerCase())) })).filter(s => s.items.length > 0) : NAV;
 
   return (
     <div suppressHydrationWarning style={{ minHeight:"100vh", backgroundColor:"var(--docs-bg)", color:"var(--docs-txt)", fontFamily:"sans-serif" }}>
@@ -563,7 +601,11 @@ export default function DocsPage() {
       </nav>
 
       <style>{`
-        @media(max-width:768px) { .docs-mobile-btn { display:flex !important; align-items:center; justify-content:center; } .docs-sidebar { transform: ${mobileNav?"translateX(0)":"translateX(-100%)"}; } }
+        @media(max-width:768px) {
+          .docs-mobile-btn { display:flex !important; align-items:center; justify-content:center; }
+          .docs-sidebar { transform: ${mobileNav?"translateX(0)":"translateX(-100%)"}; }
+          .docs-main { margin-left: 0 !important; padding: 24px 20px !important; }
+        }
       `}</style>
 
       <div style={{ display:"flex", paddingTop:"56px", minHeight:"calc(100vh - 56px)" }}>
@@ -579,7 +621,7 @@ export default function DocsPage() {
           <div style={{ flex:1, overflowY:"auto", padding:"8px" }}>
             {filtered.map(s => (
               <div key={s.id}>
-                <button onClick={() => toggleSection(s.id)} style={{ width:"100%", display:"flex", alignItems:"center", gap:"8px", padding:"8px 12px", borderRadius:"10px", border:"none", background:"transparent", cursor:"pointer", textAlign:"left" }}>
+                <button onClick={() => handleSectionClick(s)} style={{ width:"100%", display:"flex", alignItems:"center", gap:"8px", padding:"8px 12px", borderRadius:"10px", border:"none", background:"transparent", cursor:"pointer", textAlign:"left" }}>
                   <s.icon style={{ width:"14px", height:"14px", color:"var(--docs-muted)", flexShrink:0 }} />
                   <span style={{ flex:1, fontSize:"11px", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", color:"var(--docs-muted)" }}>{s.title}</span>
                   <ChevronRight style={{ width:"12px", height:"12px", color:"var(--docs-muted)", transform:open.includes(s.id)?"rotate(90deg)":"none", transition:"transform 0.2s" }} />
@@ -602,8 +644,10 @@ export default function DocsPage() {
         </aside>
 
         {/* Content */}
-        <main suppressHydrationWarning style={{ flex:1, marginLeft:"256px", padding:"40px 48px" }}>
-          <Content id={active} dark={d} />
+        <main className="docs-main" suppressHydrationWarning style={{ flex:1, marginLeft:"256px", padding:"40px 48px" }}>
+          <div style={{ maxWidth:"800px", margin:"0 auto" }}>
+            <Content id={active} dark={d} />
+          </div>
         </main>
       </div>
     </div>

@@ -48,8 +48,8 @@ export const fetchIncidents      = (params?: Record<string, string>) =>
   api.get("/api/incidents", { params }).then(r => r.data);
 export const fetchIncident       = (id: string) =>
   api.get(`/api/incidents/${id}`).then(r => r.data);
-export const fetchIncidentStats  = () =>
-  api.get("/api/incidents/stats/summary").then(r => r.data);
+export const fetchIncidentStats  = (params?: Record<string, string>) =>
+  api.get("/api/incidents/stats/summary", { params }).then(r => r.data);
 export const fetchTrends         = () =>
   api.get("/api/incidents/trends/daily").then(r => r.data);
 export const acknowledgeIncident = (id: string) =>
@@ -58,6 +58,14 @@ export const resolveIncident     = (id: string) =>
   api.patch(`/api/incidents/${id}/resolve`).then(r => r.data);
 export const diagnoseIncident    = (id: string) =>
   api.post(`/api/incidents/${id}/diagnose`).then(r => r.data);
+export const deleteIncident      = (id: string) =>
+  api.delete(`/api/incidents/${id}`).then(r => r.data);
+export const bulkAcknowledgeIncidents = (ids: string[]) =>
+  api.post("/api/incidents/bulk-acknowledge", { ids }).then(r => r.data);
+export const bulkResolveIncidents = (ids: string[]) =>
+  api.post("/api/incidents/bulk-resolve", { ids }).then(r => r.data);
+export const bulkDeleteIncidents = (ids: string[]) =>
+  api.post("/api/incidents/bulk-delete", { ids }).then(r => r.data);
 
 // ── Clusters ──────────────────────────────────────────────────────────────────
 export const fetchClusters  = () => api.get("/api/clusters").then(r => r.data);
@@ -68,9 +76,11 @@ export const deleteCluster  = (id: string) => api.delete(`/api/clusters/${id}`).
 
 // ── Channels ──────────────────────────────────────────────────────────────────
 export const fetchChannels  = () => api.get("/api/channels").then(r => r.data);
+export const fetchChannel   = (id: string) => api.get(`/api/channels/${id}`).then(r => r.data);
 export const createChannel  = (data: object) => api.post("/api/channels", data).then(r => r.data);
 export const toggleChannel  = (id: string) => api.patch(`/api/channels/${id}/toggle`).then(r => r.data);
 export const testChannel    = (id: string) => api.post(`/api/channels/${id}/test`).then(r => r.data);
+export const updateChannel  = (id: string, data: object) => api.patch(`/api/channels/${id}`, data).then(r => r.data);
 export const deleteChannel  = (id: string) => api.delete(`/api/channels/${id}`).then(r => r.data);
 
 // ── Alert Rules ───────────────────────────────────────────────────────────────

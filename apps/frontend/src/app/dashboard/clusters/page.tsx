@@ -125,14 +125,24 @@ function AddModal({ onClose, onAdded }: { onClose:()=>void; onAdded:()=>void }) 
 
 function EditModal({ cluster, onClose, onSaved }: { cluster: Cluster; onClose:()=>void; onSaved:()=>void }) {
   const [name, setName] = useState(cluster.name);
+  const [masterAlertsEnabled, setMasterAlertsEnabled] = useState(cluster.master_alerts_enabled ?? true);
+  const [workerAlertsEnabled, setWorkerAlertsEnabled] = useState(cluster.worker_alerts_enabled ?? true);
+  const [nodeCpuThreshold, setNodeCpuThreshold] = useState(cluster.node_cpu_threshold ?? 85);
+  const [nodeMemoryThreshold, setNodeMemoryThreshold] = useState(cluster.node_memory_threshold ?? 90);
   const [loading, setLoading] = useState(false);
   const { success, error } = useToast();
 
   const save = async () => {
     setLoading(true);
     try {
-      await api.patch(`/api/clusters/${cluster.cluster_id}`, { name });
-      success("Cluster updated", `Renamed to ${name}`);
+      await api.patch(`/api/clusters/${cluster.cluster_id}`, {
+        name,
+        master_alerts_enabled: masterAlertsEnabled,
+        worker_alerts_enabled: workerAlertsEnabled,
+        node_cpu_threshold: Number(nodeCpuThreshold),
+        node_memory_threshold: Number(nodeMemoryThreshold),
+      });
+      success("Cluster updated", `${name} settings saved`);
       onSaved(); onClose();
     } catch { error("Failed to update cluster"); }
     finally { setLoading(false); }
@@ -140,7 +150,7 @@ function EditModal({ cluster, onClose, onSaved }: { cluster: Cluster; onClose:()
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#1e2130] rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700 w-full max-w-sm">
+      <div className="bg-white dark:bg-[#1e2130] rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700 w-full max-w-md">
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
           <h2 className="font-bold text-gray-900 dark:text-white">Edit cluster</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
@@ -150,7 +160,66 @@ function EditModal({ cluster, onClose, onSaved }: { cluster: Cluster; onClose:()
             <label className="label">Cluster name</label>
             <input className="input" value={name} onChange={e=>setName(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&save()} />
           </div>
-          <div className="flex gap-3">
+
+          <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-500">Node Status Alerts</h3>
+            
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={masterAlertsEnabled}
+                  onChange={(e) => setMasterAlertsEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-200 dark:border-slate-700 text-indigo-600 bg-white dark:bg-slate-800 focus:ring-indigo-500"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable Master Node alerts</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={workerAlertsEnabled}
+                  onChange={(e) => setWorkerAlertsEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-200 dark:border-slate-700 text-indigo-600 bg-white dark:bg-slate-800 focus:ring-indigo-500"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable Worker Node alerts</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="label flex items-center justify-between text-xs mb-1.5">
+                  <span>CPU Warn (%)</span>
+                  <span className="font-semibold text-indigo-500">{nodeCpuThreshold}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="50"
+                  max="100"
+                  value={nodeCpuThreshold}
+                  onChange={(e) => setNodeCpuThreshold(Number(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
+                />
+              </div>
+
+              <div>
+                <label className="label flex items-center justify-between text-xs mb-1.5">
+                  <span>Mem Warn (%)</span>
+                  <span className="font-semibold text-indigo-500">{nodeMemoryThreshold}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="50"
+                  max="100"
+                  value={nodeMemoryThreshold}
+                  onChange={(e) => setNodeMemoryThreshold(Number(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
             <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
             <button onClick={save} disabled={!name||loading} className="btn-primary flex-1 justify-center">{loading?"Saving...":"Save changes"}</button>
           </div>
@@ -254,11 +323,38 @@ export default function ClustersPage() {
                       </button>
                     </div>
                   </div>
+                  {cl.status === "connected" && ((cl.master_nodes_total ?? 0) > 0 || (cl.worker_nodes_total ?? 0) > 0) && (
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {(cl.master_nodes_total ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-[11px] font-medium border border-purple-100 dark:border-purple-900/30">
+                          <span className={`w-1.5 h-1.5 rounded-full ${cl.master_nodes_ready === cl.master_nodes_total ? "bg-green-500" : "bg-red-500 animate-pulse"}`} />
+                          <span>Master Node: {cl.master_nodes_ready}/{cl.master_nodes_total} Ready</span>
+                        </div>
+                      )}
+                      {(cl.worker_nodes_total ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-[11px] font-medium border border-blue-100 dark:border-blue-900/30">
+                          <span className={`w-1.5 h-1.5 rounded-full ${cl.worker_nodes_ready === cl.worker_nodes_total ? "bg-green-500" : "bg-red-500 animate-pulse"}`} />
+                          <span>Worker Node: {cl.worker_nodes_ready}/{cl.worker_nodes_total} Ready</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="flex items-center gap-1.5">
-                    {status==="connected"?<Wifi className="w-4 h-4 text-green-500"/>:status==="error"?<WifiOff className="w-4 h-4 text-red-500"/>:<Clock className="w-4 h-4 text-amber-500"/>}
-                    <span className={`text-xs font-medium capitalize ${status==="connected"?"text-green-600 dark:text-green-400":status==="error"?"text-red-600 dark:text-red-400":"text-amber-600 dark:text-amber-400"}`}>{status}</span>
+                    {status==="connected" ? (
+                      <Wifi className="w-4 h-4 text-green-500"/>
+                    ) : status==="error" || status==="disconnected" ? (
+                      <WifiOff className={`w-4 h-4 ${status==="error" ? "text-red-500" : "text-gray-400"}`}/>
+                    ) : (
+                      <Clock className="w-4 h-4 text-amber-500"/>
+                    )}
+                    <span className={`text-xs font-medium capitalize ${
+                      status==="connected" ? "text-green-600 dark:text-green-400" :
+                      status==="error" ? "text-red-600 dark:text-red-400" :
+                      status==="disconnected" ? "text-gray-500 dark:text-slate-400" :
+                      "text-amber-600 dark:text-amber-400"
+                    }`}>{status}</span>
                   </div>
                   {me?.role === "admin" && (
                     <>
