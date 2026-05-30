@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: "standalone",
+  output: process.env.STANDALONE === "true" ? "standalone" : undefined,
   async rewrites() {
     const apiUrl = process.env.API_URL || "http://localhost:4000";
     return [
